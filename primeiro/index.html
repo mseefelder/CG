@@ -1,0 +1,143 @@
+<html>
+<head>
+	<title>First assignement: Segment intersection</title>
+	<div id="canvasDiv" >
+		<canvas id="canvas" width=1000 height=1000 
+		style = "
+		width: 80vmin; 
+		height: 80vmin; 
+		border:1px solid white; 
+		display: flex;
+		align-content: center;
+		justify-content: center;"
+		></canvas>
+	</div>
+</head>
+<body style="background-color:#111111; 
+		display: flex;
+		align-content: center;
+		justify-content: center;">
+
+	<script type="text/javascript">
+
+		//classes
+		function Point (x,y,radius) {
+			this.x = x,
+			this.y = y,
+			this.radius = radius,
+			this.c = "#00FF00",
+			this.draw = function(context){
+				var style = context.fillStyle;
+				context.fillStyle = this.c; 
+				context.beginPath();
+				context.arc(this.x,this.y,this.radius,0,2*Math.PI);
+				context.fill();
+				context.fillStyle = style;
+			},
+			this.clicked = function(x,y){
+				return ((this.x-x)*(this.x-x) + (this.y-y)*(this.y-y)) <= radius*radius
+			},
+			this.move = function(x,y){
+				this.x = x;
+				this.y = y;
+			}
+		}
+
+		function Line (a,b,stroke) {
+			this.a = a,
+			this.b = b,
+			this.stroke = stroke,
+			this.c = "#FFFFFF",
+			this.draw = function (context) {
+				var sStyle = context.strokeStyle;
+				var sWidth = context.lineWidth;
+
+				context.strokeStyle = this.c; 
+				context.lineWidth = this.stroke;
+
+				context.beginPath();
+				context.moveTo(this.a.x, this.a.y);
+				context.lineTo(this.b.x, this.b.y);
+				context.stroke();
+
+				context.fillStyle = sStyle;
+				context.lineWidth = sWidth;
+
+				this.a.draw(context);
+				this.b.draw(context);
+			},
+			//returns true if intersects
+			this.intersects = function(line) {
+				var ccw = function (A,B,C) {return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)};
+				return ccw(this.a,line.a,line.b) != ccw(this.b,line.a,line.b) && ccw(this.a,this.b,line.a) != ccw(this.a,this.b,line.b)
+			},
+			this.drawIntersection = function (line, context) {
+				if(this.intersects(line)){
+					//y1 = m*x1 + n
+					var m = (this.a.y-this.b.y)/(this.a.x-this.b.x);
+					var n = this.a.y - m*this.a.x;
+					//y2 = p*x2 + q
+					var p = (line.a.y-line.b.y)/(line.a.x-line.b.x);
+					var q = line.a.y - p*line.a.x;
+					//imtersection point
+					var x = (q-n)/(m-p);
+					var y = m*x + n;
+
+					new Point(x,y,10).draw(context);
+				}
+			}
+		}
+
+		//begin	
+		var canvas = document.getElementById("canvas");
+		canvas.width = canvas.offsetWidth;
+		canvas.height = canvas.offsetHeight;
+		var ctx = canvas.getContext("2d");
+
+		var mouse = {x: 0, y: 0};
+		var point = null;
+		var lines = [new Line(new Point((canvas.width/2)-100,(canvas.height/2)-100,10), new Point((canvas.width/2)+100,(canvas.height/2)+100,10), 5), 
+			new Line(new Point((canvas.width/2)-100,(canvas.height/2)+100,10), new Point((canvas.width/2)+100,(canvas.height/2)-100,10), 5)];
+
+		//first draw
+		lines[0].draw(ctx);
+		lines[1].draw(ctx);
+
+		lines[0].drawIntersection(lines[1],ctx);
+
+		/**/
+		canvas.addEventListener('mousemove', function(e) {
+			mouse.x = e.pageX - this.offsetLeft;
+			mouse.y = e.pageY - this.offsetTop;
+		}, false);
+
+		canvas.addEventListener('mousedown', function(e) {
+		    for (var i = lines.length - 1; i >= 0; i--) {
+		    	point = lines[i].a.clicked(mouse.x, mouse.y)?lines[i].a:point;
+		    	point = lines[i].b.clicked(mouse.x, mouse.y)?lines[i].b:point;
+		    };
+		 
+		    canvas.addEventListener('mousemove', movePoint, false);
+		}, false);
+		 
+		canvas.addEventListener('mouseup', function() {
+		    canvas.removeEventListener('mousemove', movePoint, false);
+		}, false);
+
+		function movePoint () {
+			if (point) {
+				point.move(mouse.x, mouse.y)
+			}
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			lines[0].draw(ctx);
+			lines[1].draw(ctx);
+
+			lines[0].drawIntersection(lines[1],ctx);;
+		}
+
+		/**/
+
+	</script>
+
+</body>
+</html>
