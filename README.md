@@ -2,4 +2,4 @@
  
 ## First assignement:
 
-Interactive line segment interaction.
+* Interactive line segment interaction.
