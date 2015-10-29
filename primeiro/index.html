@@ -21,11 +21,13 @@
 	<script type="text/javascript">
 
 		//classes
+		//Represents a single point
 		function Point (x,y,radius) {
-			this.x = x,
-			this.y = y,
-			this.radius = radius,
-			this.c = "#00FF00",
+			this.x = x, //x coordinate
+			this.y = y, //y coordinate
+			this.radius = radius, //point radius, for circle representation
+			this.c = "#00FF00", //point color for cricle representation
+			//draw itself on the context defined by the argument
 			this.draw = function(context){
 				var style = context.fillStyle;
 				context.fillStyle = this.c; 
@@ -34,20 +36,25 @@
 				context.fill();
 				context.fillStyle = style;
 			},
+			//given x,y coordinates, define whether the point was clicked
+			//returns true if clicked and false otherwise
 			this.clicked = function(x,y){
 				return ((this.x-x)*(this.x-x) + (this.y-y)*(this.y-y)) <= radius*radius
 			},
+			//move this point to the given x,y coordinates
 			this.move = function(x,y){
 				this.x = x;
 				this.y = y;
 			}
 		}
 
+		//Represents a line segment as a connection between to points: a and b
 		function Line (a,b,stroke) {
-			this.a = a,
-			this.b = b,
-			this.stroke = stroke,
-			this.c = "#FFFFFF",
+			this.a = a, //Point a
+			this.b = b, //Point b
+			this.stroke = stroke, //stroke width for line drawing
+			this.c = "#FFFFFF", //stroke color for line drawing
+			//draw itself and its points on the context defined by the argument
 			this.draw = function (context) {
 				var sStyle = context.strokeStyle;
 				var sWidth = context.lineWidth;
@@ -66,51 +73,64 @@
 				this.a.draw(context);
 				this.b.draw(context);
 			},
-			//returns true if intersects
+			//returns true there is an intersection between itself and line
 			this.intersects = function(line) {
 				var ccw = function (A,B,C) {return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)};
 				return ccw(this.a,line.a,line.b) != ccw(this.b,line.a,line.b) && ccw(this.a,this.b,line.a) != ccw(this.a,this.b,line.b)
 			},
+			//if there is an intersection, draws a Point where the intersection happens
 			this.drawIntersection = function (line, context) {
 				if(this.intersects(line)){
-					//y1 = m*x1 + n
+					//y1 = m*x1 + n <-parametrization of this
 					var m = (this.a.y-this.b.y)/(this.a.x-this.b.x);
 					var n = this.a.y - m*this.a.x;
-					//y2 = p*x2 + q
+					//y2 = p*x2 + q <- parametrization of line
 					var p = (line.a.y-line.b.y)/(line.a.x-line.b.x);
 					var q = line.a.y - p*line.a.x;
 					//imtersection point
-					var x = (q-n)/(m-p);
-					var y = m*x + n;
-
+					var x = (q-n)/(m-p); //intersection's x coordinate
+					var y = m*x + n; //intersection's y coordinate found with parametrization of this
+					//create and draw intersection point
 					new Point(x,y,10).draw(context);
 				}
 			}
 		}
 
-		//begin	
+		//begin: reference canvas and its context. Resize canvas according to its style (defined on the html tag or css)
 		var canvas = document.getElementById("canvas");
 		canvas.width = canvas.offsetWidth;
 		canvas.height = canvas.offsetHeight;
 		var ctx = canvas.getContext("2d");
 
+		//global variable for mouse position
 		var mouse = {x: 0, y: 0};
+		//global variable. If there's a point being moved around with the mouse, this variable references it
 		var point = null;
-		var lines = [new Line(new Point((canvas.width/2)-100,(canvas.height/2)-100,10), new Point((canvas.width/2)+100,(canvas.height/2)+100,10), 5), 
-			new Line(new Point((canvas.width/2)-100,(canvas.height/2)+100,10), new Point((canvas.width/2)+100,(canvas.height/2)-100,10), 5)];
+
+		//list of line segments
+		var lines = [
+			new Line(new Point((canvas.width/2)-100,(canvas.height/2)-100,10), new Point((canvas.width/2)+100,(canvas.height/2)+100,10), 5), 
+			new Line(new Point((canvas.width/2)-100,(canvas.height/2)+100,10), new Point((canvas.width/2)+100,(canvas.height/2)-100,10), 5)
+		];
 
 		//first draw
+		//In this application draws only happen when a point is moved, so we need to draw the initial state
 		lines[0].draw(ctx);
 		lines[1].draw(ctx);
 
 		lines[0].drawIntersection(lines[1],ctx);
 
-		/**/
+		
+		//event that updates the mouse position when the mouse moves
 		canvas.addEventListener('mousemove', function(e) {
 			mouse.x = e.pageX - this.offsetLeft;
 			mouse.y = e.pageY - this.offsetTop;
 		}, false);
 
+		//when mouse is clicked (but not yet released) this event:
+		//	checks if it has clicked on any of the points belonging to the lines;
+		//		if so, attributes this point to the global variable 'point';
+		//	sets the 'mousemove' event to call the movePoint function.
 		canvas.addEventListener('mousedown', function(e) {
 		    for (var i = lines.length - 1; i >= 0; i--) {
 		    	point = lines[i].a.clicked(mouse.x, mouse.y)?lines[i].a:point;
@@ -120,10 +140,43 @@
 		    canvas.addEventListener('mousemove', movePoint, false);
 		}, false);
 		 
+		//when the mouse is released:
+		//clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
 		canvas.addEventListener('mouseup', function() {
+			point = null;
+
 		    canvas.removeEventListener('mousemove', movePoint, false);
 		}, false);
 
+		//event that updates the mouse position when the mouse moves
+		canvas.addEventListener('touchmove', function(e) {
+			mouse.x = e.pageX - this.offsetLeft;
+			mouse.y = e.pageY - this.offsetTop;
+		}, false);
+
+		//when mouse is clicked (but not yet released) this event:
+		//	checks if it has clicked on any of the points belonging to the lines;
+		//		if so, attributes this point to the global variable 'point';
+		//	sets the 'mousemove' event to call the movePoint function.
+		canvas.addEventListener('touchstart', function(e) {
+		    for (var i = lines.length - 1; i >= 0; i--) {
+		    	point = lines[i].a.clicked(mouse.x, mouse.y)?lines[i].a:point;
+		    	point = lines[i].b.clicked(mouse.x, mouse.y)?lines[i].b:point;
+		    };
+		 
+		    canvas.addEventListener('touchmove', movePoint, false);
+		}, false);
+		 
+		//when the mouse is released:
+		//clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
+		canvas.addEventListener('touchend', function() {
+			point = null;
+
+		    canvas.removeEventListener('touchmove', movePoint, false);
+		}, false);
+
+		//moves the point referenced by global variable 'point' to global variable 'mouse' x,y coordinates
+		//then, clear the canvas and redraw
 		function movePoint () {
 			if (point) {
 				point.move(mouse.x, mouse.y)
@@ -134,8 +187,6 @@
 
 			lines[0].drawIntersection(lines[1],ctx);;
 		}
-
-		/**/
 
 	</script>
 
