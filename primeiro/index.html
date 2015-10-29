@@ -148,33 +148,6 @@
 		    canvas.removeEventListener('mousemove', movePoint, false);
 		}, false);
 
-		//event that updates the mouse position when the mouse moves
-		canvas.addEventListener('touchmove', function(e) {
-			mouse.x = e.pageX - this.offsetLeft;
-			mouse.y = e.pageY - this.offsetTop;
-		}, false);
-
-		//when mouse is clicked (but not yet released) this event:
-		//	checks if it has clicked on any of the points belonging to the lines;
-		//		if so, attributes this point to the global variable 'point';
-		//	sets the 'mousemove' event to call the movePoint function.
-		canvas.addEventListener('touchstart', function(e) {
-		    for (var i = lines.length - 1; i >= 0; i--) {
-		    	point = lines[i].a.clicked(mouse.x, mouse.y)?lines[i].a:point;
-		    	point = lines[i].b.clicked(mouse.x, mouse.y)?lines[i].b:point;
-		    };
-		 
-		    canvas.addEventListener('touchmove', movePoint, false);
-		}, false);
-		 
-		//when the mouse is released:
-		//clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
-		canvas.addEventListener('touchend', function() {
-			point = null;
-
-		    canvas.removeEventListener('touchmove', movePoint, false);
-		}, false);
-
 		//moves the point referenced by global variable 'point' to global variable 'mouse' x,y coordinates
 		//then, clear the canvas and redraw
 		function movePoint () {
