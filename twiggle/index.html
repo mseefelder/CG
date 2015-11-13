@@ -16,15 +16,6 @@
     <meta property="og:description" content="TWGL.js - twgl-cube" />
     <meta property="og:url" content="http://twgljs.org" />
 
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@greggman">
-    <meta name="twitter:creator" content="@greggman">
-    <meta name="twitter:domain" content="twgljs.org">
-    <meta name="twitter:title" content="TWGL.js - twgl-cube">
-    <meta name="twitter:url" content="http://twgljs.org/examples/twgl-cube.html">
-    <meta name="twitter:description" content="TWGL.js - twgl-cube">
-    <meta name="twitter:image:src" content="http://twgljs.org/examples/screenshots/twgl-cube.png">
-
     <link href="/resources/images/twgljs-icon.png" rel="shortcut icon" type="image/png">
 
     <title>twgl.js - twgl cube</title>
@@ -119,13 +110,26 @@ void main() {
 }
   </script>
   <script src="js/twgl-full.js"></script>
+  <script src="js/trackball.js"></script>
+
+
+
+
+
   <script>
     "use strict";
     twgl.setAttributePrefix("a_");
     var m4 = twgl.m4;
     var gl = twgl.getWebGLContext(document.getElementById("c"));
     var programInfo = twgl.createProgramInfo(gl, ["vs", "fs"]);
+    var trackball = new twgl.Trackball(gl.canvas);
 
+    //application status variables
+    var update = true;
+    var viewport = function (){
+      this.x = 0,
+      this.y = 0
+    };
 /*
     var arrays = {
       position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
@@ -153,38 +157,33 @@ void main() {
 
     function render(time) {
       time *= 0.001;
-      //resize canvas to fill browser window and resize glViewport
+
       twgl.resizeCanvasToDisplaySize(gl.canvas);
-      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      
+      //only recalculate camera matrixes when resized
+      if (update || gl.canvas.width !== viewport.x || gl.canvas.height !== viewport.y) {
+        //resize canvas to fill browser window and resize glViewport
+        viewport.x = gl.canvas.width;
+        viewport.y = gl.canvas.height;
+        gl.viewport(0, 0, viewport.x, viewport.y);
+        trackball.update();
+        update = false;
+      };
 
       gl.enable(gl.DEPTH_TEST);
       //gl.enable(gl.CULL_FACE); //double-sided faces
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-      //projection "lenses"
-      var projection = m4.perspective(30 * Math.PI / 180, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.5, 10);
-      //eye position in the world
-      var eye = [1, 4, -6];
-      //where is the eye looking at?
-      var target = [0, 0, 0];
-      //where do the top of the camera point to?
-      var up = [0, 1, 0];
-
-      //create view and projection, multiply
-      var camera = m4.lookAt(eye, target, up);
-      var view = m4.inverse(camera);
-      var viewProjection = m4.multiply(view, projection);
-
       //will transform stuff around (model matrix) when processing the vertices (vertex shader)
-      var world = m4.identity();//rotationX(time);
+      var world = m4.identity();//rotationX(time);//
 
       //set uniforms
-      uniforms.u_viewInverse = camera;
+      uniforms.u_viewInverse = trackball.cameraMatrix;
       uniforms.u_world = world;
       //we use the following to deal with the normals on the vertex shader
       uniforms.u_worldInverseTranspose = m4.transpose(m4.inverse(world));
       //model * (view*projection) = modelViewProjection
-      uniforms.u_worldViewProjection = m4.multiply(world, viewProjection);
+      uniforms.u_worldViewProjection = m4.multiply(world, trackball.viewProjectionMatrix);
 
       gl.useProgram(programInfo.program);
       twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);

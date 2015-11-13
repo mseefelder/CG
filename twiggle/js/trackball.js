@@ -1,95 +1,142 @@
-twgl.EventDispatcher = function () {}
+//Reference:
+// https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
 
-twgl.EventDispatcher.prototype = {
+twgl.Trackball = function ( canvas ) {
+	//
+	this.canvas = ( canvas !== undefined ) ? canvas : document;
+	
+	//camera variables
+	//some of these would better be "private", but let it be for now
 
-	constructor: twgl.EventDispatcher,
+	//eye position in the world
+	this.eye = [1, 4, -6];
+	//where is the eye looking at?
+	this.target = [0,0,0];
+	//where does the top of the camera point to?
+	this.up = [0,1,0];
+	//projection "lenses"
+	this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
+	this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
+	this.viewProjectionMatrix = m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);
+	//internal variables
+	var scope = this;
+	
+	//this.functions
+	this.update = function () {
+		this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
+		this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
+		this.viewProjectionMatrix = m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);
+	};
 
-	apply: function ( object ) {
 
-		object.addEventListener = twgl.EventDispatcher.prototype.addEventListener;
-		object.hasEventListener = twgl.EventDispatcher.prototype.hasEventListener;
-		object.removeEventListener = twgl.EventDispatcher.prototype.removeEventListener;
-		object.dispatchEvent = twgl.EventDispatcher.prototype.dispatchEvent;
 
-	},
+	//
+	function onMouseDown( event ){
 
-	addEventListener: function ( type, listener ) {
+	}
 
-		if ( this._listeners === undefined ) this._listeners = {};
+	function onMouseWheel( event ){
 
-		var listeners = this._listeners;
+	}
+	
+	/*
+	this.canvas.addEventListener( 'canvasmenu', function ( event ) { event.preventDefault(); }, false );
+	this.canvas.addEventListener( 'mousedown', onMouseDown, false );
+	this.canvas.addEventListener( 'mousewheel', onMouseWheel, false );
+	this.canvas.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
+	*/
+};
 
-		if ( listeners[ type ] === undefined ) {
+//twgl.Trackball.prototype = Object.create( twgl.EventDispatcher.prototype );
 
-			listeners[ type ] = [];
+/*
+	twgl.EventDispatcher = function () {}
 
-		}
+	twgl.EventDispatcher.prototype = {
 
-		if ( listeners[ type ].indexOf( listener ) === - 1 ) {
+		constructor: twgl.EventDispatcher,
 
-			listeners[ type ].push( listener );
+		apply: function ( object ) {
 
-		}
+			object.addEventListener = twgl.EventDispatcher.prototype.addEventListener;
+			object.hasEventListener = twgl.EventDispatcher.prototype.hasEventListener;
+			object.removeEventListener = twgl.EventDispatcher.prototype.removeEventListener;
+			object.dispatchEvent = twgl.EventDispatcher.prototype.dispatchEvent;
 
-	},
+		},
 
-	hasEventListener: function ( type, listener ) {
+		addEventListener: function ( type, listener ) {
 
-		if ( this._listeners === undefined ) return false;
+			if ( this._listeners === undefined ) this._listeners = {};
 
-		var listeners = this._listeners;
+			var listeners = this._listeners;
 
-		if ( listeners[ type ] !== undefined && listeners[ type ].indexOf( listener ) !== - 1 ) {
+			if ( listeners[ type ] === undefined ) {
 
-			return true;
+				listeners[ type ] = [];
 
-		}
+			}
 
-		return false;
+			if ( listeners[ type ].indexOf( listener ) === - 1 ) {
 
-	},
+				listeners[ type ].push( listener );
 
-	removeEventListener: function ( type, listener ) {
+			}
 
-		if ( this._listeners === undefined ) return;
+		},
 
-		var listeners = this._listeners;
-		var index = listeners[ type ].indexOf( listener );
+		hasEventListener: function ( type, listener ) {
 
-		if ( index !== - 1 ) {
+			if ( this._listeners === undefined ) return false;
 
-			listeners[ type ].splice( index, 1 );
+			var listeners = this._listeners;
 
-		}
+			if ( listeners[ type ] !== undefined && listeners[ type ].indexOf( listener ) !== - 1 ) {
 
-	},
+				return true;
 
-	dispatchEvent: function ( event ) {
+			}
 
-		if ( this._listeners === undefined ) return;
+			return false;
 
-		var listeners = this._listeners;
-		var listenerArray = listeners[ event.type ];
+		},
 
-		if ( listenerArray !== undefined ) {
+		removeEventListener: function ( type, listener ) {
 
-			event.target = this;
+			if ( this._listeners === undefined ) return;
 
-			for ( var i = 0, l = listenerArray.length; i < l; i ++ ) {
+			var listeners = this._listeners;
+			var index = listeners[ type ].indexOf( listener );
 
-				listenerArray[ i ].call( this, event );
+			if ( index !== - 1 ) {
+
+				listeners[ type ].splice( index, 1 );
+
+			}
+
+		},
+
+		dispatchEvent: function ( event ) {
+
+			if ( this._listeners === undefined ) return;
+
+			var listeners = this._listeners;
+			var listenerArray = listeners[ event.type ];
+
+			if ( listenerArray !== undefined ) {
+
+				event.target = this;
+
+				for ( var i = 0, l = listenerArray.length; i < l; i ++ ) {
+
+					listenerArray[ i ].call( this, event );
+
+				}
 
 			}
 
 		}
 
-	}
+	};
+*/
 
-};
-
-twgl.Trackball = function ( object, domElement ) {
-	this.object = object;
-	this.domElement = ( domElement !== undefined ) ? domElement : document;
-};
-
-twgl.Trackball.prototype = Object.create( twgl.EventDispatcher.prototype );
