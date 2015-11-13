@@ -1,16 +1,57 @@
+<!DOCTYPE html>
+
+<!--Feito por: Marcos Seefelder de Assis Araujo--> 
+
 <html>
 <head>
+	<meta charset="utf-8">
 	<title>First assignement: Segment intersection</title>
-	<div id="canvasDiv" >
+	<div id="canvasDiv" style = "display: flex; flex-direction: column; justify-content:center; text-align: center; align-items:center;" >
+		<h3 style = "color:white; height:1vmin;">Segment intersection: click and drag to interact</h3>
 		<canvas id="canvas" width=1000 height=1000 
-		style = "
-		width: 80vmin; 
-		height: 80vmin; 
-		border:1px solid white; 
-		display: flex;
-		align-content: center;
-		justify-content: center;"
-		></canvas>
+			style = "
+			width: 80vmin; 
+			height: 80vmin; 
+			border:1px solid white; 
+			display: flex;
+			align-content: center;
+			justify-content: center;">
+		</canvas>
+		<div style = "display: flex; flex-direction: row;">
+			<div class="myButton" id="plus">+ line</div>
+			<div class="myButton" id="minus">- line</div>
+		</div>
+		<h6 style = "color: white; display:flex; flex-direction:column; height:1vmin;">Marcos Seefelder de Assis Araujo - Computer Graphics - EEL882 - UFRJ</h6>
+		<style type="text/css">
+			.myButton {
+				width: 16vmin;
+				height: 3vmin;
+				background-color:#44c767;
+				-moz-border-radius:21px;
+				-webkit-border-radius:21px;
+				border-radius:21px;
+				display:flex;
+				cursor:pointer;
+				flex-direction: column;
+				color:#ffffff;
+				font-size:4vmin;
+				padding:1vmin 1vmin;
+				text-decoration:none;
+				align-content: center;
+				justify-content: center;
+				text-align: center;
+				-webkit-user-select: none;     
+				-moz-user-select: none;
+				-ms-user-select: none;
+			}
+			.myButton:hover {
+				background-color:#5cbf2a;
+			}
+			.myButton:active {
+				position:relative;
+				top:1px;
+			}
+		</style>
 	</div>
 </head>
 <body style="background-color:#111111; 
@@ -26,7 +67,7 @@
 			this.x = x, //x coordinate
 			this.y = y, //y coordinate
 			this.radius = radius, //point radius, for circle representation
-			this.c = "#00FF00", //point color for cricle representation
+			this.c = "#02E020", //point color for cricle representation
 			//draw itself on the context defined by the argument
 			this.draw = function(context){
 				var style = context.fillStyle;
@@ -74,29 +115,34 @@
 				this.b.draw(context);
 			},
 			//returns true there is an intersection between itself and line
+			//uses the orientation to check if line segments intersect
 			this.intersects = function(line) {
 				var ccw = function (A,B,C) {return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)};
 				return ccw(this.a,line.a,line.b) != ccw(this.b,line.a,line.b) && ccw(this.a,this.b,line.a) != ccw(this.a,this.b,line.b)
 			},
+
 			//if there is an intersection, draws a Point where the intersection happens
+			//uses determinants to find intersection point
 			this.drawIntersection = function (line, context) {
 				if(this.intersects(line)){
-					//y1 = m*x1 + n <-parametrization of this
-					var m = (this.a.y-this.b.y)/(this.a.x-this.b.x);
-					var n = this.a.y - m*this.a.x;
-					//y2 = p*x2 + q <- parametrization of line
-					var p = (line.a.y-line.b.y)/(line.a.x-line.b.x);
-					var q = line.a.y - p*line.a.x;
-					//imtersection point
-					var x = (q-n)/(m-p); //intersection's x coordinate
-					var y = m*x + n; //intersection's y coordinate found with parametrization of this
-					//create and draw intersection point
+					var a1 = this.a.x - this.b.x;
+					var b1 = this.a.y - this.b.y;
+					var c1 = this.a.x*this.b.y - this.a.y*this.b.x;
+
+					var a2 = line.a.x - line.b.x;
+					var b2 = line.a.y - line.b.y;
+					var c2 = line.a.x*line.b.y - line.a.y*line.b.x;
+
+					var det = a1*b2-b1*a2;
+					var x = (c1*a2 - a1*c2)/det;
+					var y = (c1*b2 - b1*c2)/det;
+
 					new Point(x,y,10).draw(context);
 				}
 			}
 		}
-
-		//begin: reference canvas and its context. Resize canvas according to its style (defined on the html tag or css)
+		
+		//begin: get canvas and its context. Resize canvas according to its style (defined on the html tag or css)
 		var canvas = document.getElementById("canvas");
 		canvas.width = canvas.offsetWidth;
 		canvas.height = canvas.offsetHeight;
@@ -115,11 +161,18 @@
 
 		//first draw
 		//In this application draws only happen when a point is moved, so we need to draw the initial state
-		lines[0].draw(ctx);
-		lines[1].draw(ctx);
+		display();
 
-		lines[0].drawIntersection(lines[1],ctx);
+		document.getElementById("plus").addEventListener('click', function(e) {
+			var line = new Line(new Point(Math.random()*(canvas.width),Math.random()*(canvas.height),10), new Point(Math.random()*(canvas.width),Math.random()*(canvas.height),10), 5);
+			lines.push(line);
+			display();
+		}, false);
 
+		document.getElementById("minus").addEventListener('click', function(e) {
+			lines.pop();
+			display();
+		}, false);
 		
 		//event that updates the mouse position when the mouse moves
 		canvas.addEventListener('mousemove', function(e) {
@@ -154,11 +207,22 @@
 			if (point) {
 				point.move(mouse.x, mouse.y)
 			}
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
-			lines[0].draw(ctx);
-			lines[1].draw(ctx);
+			display();
+		}
 
-			lines[0].drawIntersection(lines[1],ctx);;
+		//draw all lines on lines[] and their intersections
+		function display () {
+			//clear canvas
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			//draw each line
+			for (var i = lines.length - 1; i >= 0; i--) {
+				lines[i].draw(ctx);
+				//draw each intersection between the line and the lines with greater index
+				//avoids drawing the same intersection twice
+				for (var j = (i+1); j < lines.length; j++) {
+					lines[i].drawIntersection(lines[j],ctx);
+				};
+			};
 		}
 
 	</script>
