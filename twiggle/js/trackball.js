@@ -26,8 +26,9 @@ twgl.Trackball = function ( canvas ) {
 	var scope = this;
 	var isRotating = false;
 	var updateRotation = false;
-	var initialVector = v3.create(0,0,0);
-	var finalVector = v3.create(0,0,0);
+	var v3 = twgl.v3;
+	var initialVector = v3.copy([0,0,0]);
+	var finalVector = v3.copy([0,0,0]);
 	
 	//this.functions
 	this.update = function () {
@@ -62,8 +63,20 @@ twgl.Trackball = function ( canvas ) {
 		}
 	};
 
-	//
+	//takes in two vector components supposed to be between -1.0 and 1.0
+	function projectOnSphere ( x, y ) {
+		var projection = v3.copy([x,y,0]);
+		var projectionLength = v3.length(projection); 
+		if (projectionLength <= 1) {
+			projection[2] = Math.sqrt(1 - projectionLength);
+		} else{
+			v3.normalize(projection, projection);
+		}
+		return projection;
+	}
+
 	function onMouseDown( event ){
+		
 		
 	}
 
