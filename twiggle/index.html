@@ -175,7 +175,7 @@ void main() {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       //will transform stuff around (model matrix) when processing the vertices (vertex shader)
-      var world = m4.identity();//rotationX(time);//
+      var world = m4.rotationX(time);//identity();//
 
       //set uniforms
       uniforms.u_viewInverse = trackball.cameraMatrix;
