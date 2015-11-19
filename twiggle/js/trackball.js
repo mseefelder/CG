@@ -22,6 +22,7 @@ twgl.Trackball = function ( canvas ) {
 	this.viewProjectionMatrix = m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);
 
 	//transformation matrix
+	this.oldTransformMatrix = m4.identity();
 	this.transformMatrix = m4.identity();
 
 	//internal variables
@@ -40,9 +41,20 @@ twgl.Trackball = function ( canvas ) {
 	this.updateRotation = function () {
 		if (updateRotation) {
 			//update transform matrix with rotation
-			var angle = Math.acos(Math.min(1.0,v3.dot(initialVector,finalVector)));
+			var dot = v3.dot(initialVector,finalVector);
+			var angle = (dot <= 1) ? Math.acos(dot) : 0.0;
+			//rotation damping;
+			angle = 0.8 * angle;
 			var axis = v3.cross(initialVector,finalVector);
-			this.transformMatrix = m4.axisRotation(axis, angle).
+			if(v3.lengthSq(axis) != 0) {
+				v3.normalize(axis,axis);
+			}
+
+			axis = m4.transformDirection(m4.inverse(m4.multiply(this.oldTransformMatrix, m4.inverse(this.cameraMatrix))), axis);
+
+			//this.transformMatrix = m4.multiply( m4.axisRotation(axis, angle), this.oldTransformMatrix);
+			m4.axisRotate(this.oldTransformMatrix, axis, angle, this.transformMatrix);
+			
 			//rotation updated. set as false
 			updateRotation = false;
 		}
@@ -55,6 +67,7 @@ twgl.Trackball = function ( canvas ) {
 		if (!isRotating) {
 			isRotating = true;
 			initialVector = projectOnSphere(x,y);
+			m4.copy(this.transformMatrix, this.oldTransformMatrix);
 		}
 		else {
 			finalVector = projectOnSphere(x,y);
