@@ -130,6 +130,8 @@ void main() {
       this.x = 0,
       this.y = 0
     };
+    //global variable for mouse position
+    var mouse = {x: 0, y: 0};
 /*
     var arrays = {
       position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
@@ -155,6 +157,41 @@ void main() {
       u_specularFactor: 1,
     };
 
+    function rotateTrackball () {
+      trackball.rotate(mouse.x, mouse.y);
+    }
+
+    //event that updates the mouse position when the mouse moves
+    gl.canvas.addEventListener('mousemove', function(e) {
+      mouse.x = (2.0*(e.pageX - this.offsetLeft)/gl.canvas.width)-1.0;
+      mouse.y = -((2.0*(e.pageY - this.offsetTop)/gl.canvas.height)-1.0);
+    }, false);
+
+    //when mouse is clicked (but not yet released) this event:
+    //  checks if it has clicked on any of the points belonging to the lines;
+    //    if so, attributes this point to the global variable 'point';
+    //  sets the 'mousemove' event to call the movePoint function.
+    gl.canvas.addEventListener('mousedown', function(e) {
+        trackball.rotate(mouse.x,mouse.y);     
+        gl.canvas.addEventListener('mousemove', rotateTrackball, false);
+    }, false);
+     
+    //when the mouse is released:
+    //clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
+    gl.canvas.addEventListener('mouseup', function() {
+      trackball.endRotation(mouse.x,mouse.y);
+      gl.canvas.removeEventListener('mousemove', rotateTrackball, false);
+    }, false);
+
+    //moves the point referenced by global variable 'point' to global variable 'mouse' x,y coordinates
+    //then, clear the canvas and redraw
+    /*function movePoint () {
+      if (point) {
+        point.move(mouse.x, mouse.y)
+      }
+      display();
+    }*/
+
     function render(time) {
       time *= 0.001;
 
@@ -169,13 +206,14 @@ void main() {
         trackball.update();
         update = false;
       };
+      trackball.updateRotation();
 
       gl.enable(gl.DEPTH_TEST);
       //gl.enable(gl.CULL_FACE); //double-sided faces
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       //will transform stuff around (model matrix) when processing the vertices (vertex shader)
-      var world = m4.rotationX(time);//identity();//
+      var world = trackball.transformMatrix;//m4.identity();//rotationX(time);//
 
       //set uniforms
       uniforms.u_viewInverse = trackball.cameraMatrix;

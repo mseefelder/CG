@@ -4,6 +4,8 @@
 twgl.Trackball = function ( canvas ) {
 	//
 	this.canvas = ( canvas !== undefined ) ? canvas : document;
+	var m4 = twgl.m4;
+	var v3 = twgl.v3;
 	
 	//camera variables
 	//some of these would better be "private", but let it be for now
@@ -26,25 +28,30 @@ twgl.Trackball = function ( canvas ) {
 	var scope = this;
 	var isRotating = false;
 	var updateRotation = false;
-	var v3 = twgl.v3;
 	var initialVector = v3.copy([0,0,0]);
 	var finalVector = v3.copy([0,0,0]);
 	
 	//this.functions
 	this.update = function () {
-		if (updateRotation) {
-			//update transform matrix with rotation
-			//...
-			//rotation updated. set as false
-			updateRotation = false;
-		}
 		this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
 		this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
 		this.viewProjectionMatrix = m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);
 	};
+	this.updateRotation = function () {
+		if (updateRotation) {
+			//update transform matrix with rotation
+			var angle = Math.acos(Math.min(1.0,v3.dot(initialVector,finalVector)));
+			var axis = v3.cross(initialVector,finalVector);
+			this.transformMatrix = m4.axisRotation(axis, angle).
+			//rotation updated. set as false
+			updateRotation = false;
+		}
+	};
 
 	//takes in two vector components supposed to be between -1.0 and 1.0
 	this.rotate = function ( x, y ) {
+        console.log(x,y);
+        /**/
 		if (!isRotating) {
 			isRotating = true;
 			initialVector = projectOnSphere(x,y);
@@ -53,9 +60,11 @@ twgl.Trackball = function ( canvas ) {
 			finalVector = projectOnSphere(x,y);
 			updateRotation = true;
 		}
+		/**/
 	};
 
 	this.endRotation = function ( x, y ) {
+		console.log("end of rotation");
 		if (isRotating) {
 			finalVector = projectOnSphere(x,y);
 			updateRotation = true;
