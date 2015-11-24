@@ -63,7 +63,7 @@ varying vec3 v_surfaceToView;
 
 void main() {
   //v_texCoord = a_texcoord;
-  v_position = (u_worldViewProjection * a_position);
+  v_position = (u_worldViewProjection * a_position);//(a_position * u_worldViewProjection);//
   v_normal = (u_worldInverseTranspose * vec4(a_normal, 0)).xyz;
   v_surfaceToLight = u_lightWorldPos - (u_world * a_position).xyz;
   v_surfaceToView = (u_viewInverse[3] - (u_world * a_position)).xyz;
@@ -109,7 +109,7 @@ void main() {
   gl_FragColor = outColor;
 }
   </script>
-  <script src="js/twgl-full.js"></script>
+  <script src="js/twgl-full-modified.js"></script>
   <script src="js/trackball.js"></script>
 
 
@@ -221,7 +221,7 @@ void main() {
       //we use the following to deal with the normals on the vertex shader
       uniforms.u_worldInverseTranspose = m4.transpose(m4.inverse(world));
       //model * (view*projection) = modelViewProjection
-      uniforms.u_worldViewProjection = m4.multiply(world, trackball.viewProjectionMatrix);
+      uniforms.u_worldViewProjection = m4.multiply(trackball.viewProjectionMatrix, world);//m4.multiply(world, trackball.viewProjectionMatrix);//
 
       gl.useProgram(programInfo.program);
       twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);

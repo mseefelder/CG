@@ -19,7 +19,7 @@ twgl.Trackball = function ( canvas ) {
 	//projection "lenses"
 	this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
 	this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
-	this.viewProjectionMatrix = m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);
+	this.viewProjectionMatrix = m4.multiply(this.projectionMatrix, m4.inverse(this.cameraMatrix));//m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);//
 
 	//transformation matrix
 	this.oldTransformMatrix = m4.identity();
@@ -36,7 +36,7 @@ twgl.Trackball = function ( canvas ) {
 	this.update = function () {
 		this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
 		this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
-		this.viewProjectionMatrix = m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);
+		this.viewProjectionMatrix = m4.multiply(this.projectionMatrix, m4.inverse(this.cameraMatrix));//m4.multiply(m4.inverse(this.cameraMatrix), this.projectionMatrix);//
 	};
 	this.updateRotation = function () {
 		if (updateRotation) {
@@ -50,10 +50,12 @@ twgl.Trackball = function ( canvas ) {
 				v3.normalize(axis,axis);
 			}
 
-			axis = m4.transformDirection(m4.inverse(m4.multiply(this.oldTransformMatrix, m4.inverse(this.cameraMatrix))), axis);
+			//axis = m4.transformDirection(m4.inverse(m4.multiply(this.oldTransformMatrix, m4.inverse(this.cameraMatrix))), axis);
+			axis = m4.transformDirection(m4.inverse(m4.multiply(m4.inverse(this.cameraMatrix), this.oldTransformMatrix)), axis);
 
-			//this.transformMatrix = m4.multiply( m4.axisRotation(axis, angle), this.oldTransformMatrix);
+			//commented for now
 			m4.axisRotate(this.oldTransformMatrix, axis, angle, this.transformMatrix);
+
 			
 			//rotation updated. set as false
 			updateRotation = false;
