@@ -16,6 +16,9 @@ twgl.Trackball = function ( canvas ) {
 	this.target = [0,0,0];
 	//where does the top of the camera point to?
 	this.up = [0,1,0];
+	//arcball's radius
+	this.radius = 1.0;
+	
 	//projection "lenses"
 	this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
 	this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
@@ -44,7 +47,8 @@ twgl.Trackball = function ( canvas ) {
 			var dot = v3.dot(initialVector,finalVector);
 			var angle = (dot <= 1) ? Math.acos(dot) : 0.0;
 			//rotation damping;
-			angle = 0.8 * angle;
+			//angle = 0.8 * angle;
+
 			var axis = v3.cross(initialVector,finalVector);
 			if(v3.lengthSq(axis) != 0) {
 				v3.normalize(axis,axis);
@@ -53,8 +57,10 @@ twgl.Trackball = function ( canvas ) {
 			//axis = m4.transformDirection(m4.inverse(m4.multiply(this.oldTransformMatrix, m4.inverse(this.cameraMatrix))), axis);
 			axis = m4.transformDirection(m4.inverse(m4.multiply(m4.inverse(this.cameraMatrix), this.oldTransformMatrix)), axis);
 
+			var q = quaternionRotationMatrix( axis, angle );
+			m4.multiply(this.oldTransformMatrix, q, this.transformMatrix);
 			//commented for now
-			m4.axisRotate(this.oldTransformMatrix, axis, angle, this.transformMatrix);
+			//m4.axisRotate(this.oldTransformMatrix, axis, angle, this.transformMatrix);
 
 			
 			//rotation updated. set as false
@@ -68,11 +74,11 @@ twgl.Trackball = function ( canvas ) {
         /**/
 		if (!isRotating) {
 			isRotating = true;
-			initialVector = projectOnSphere(x,y);
+			initialVector = projectOnSphere(x,y,1.0);
 			m4.copy(this.transformMatrix, this.oldTransformMatrix);
 		}
 		else {
-			finalVector = projectOnSphere(x,y);
+			finalVector = projectOnSphere(x,y,1.0);
 			updateRotation = true;
 		}
 		/**/
@@ -88,15 +94,49 @@ twgl.Trackball = function ( canvas ) {
 	};
 
 	//takes in two vector components supposed to be between -1.0 and 1.0
-	function projectOnSphere ( x, y ) {
+	function projectOnSphere ( x, y, radius ) {
 		var projection = v3.copy([x,y,0]);
 		var projectionLength = v3.length(projection); 
-		if (projectionLength <= 1) {
+		if (projectionLength <= radius) {
 			projection[2] = Math.sqrt(1 - projectionLength);
 		} else{
 			v3.normalize(projection, projection);
 		}
+		//redundant step
+		if (v3.length(projection) > 0.0) {
+			v3.normalize(projection, projection);
+		}
 		return projection;
+	}
+
+	//expects a unit vector for the axis and a angle of rotation in radians
+	function quaternionRotationMatrix (axis, angle) {
+		var rot = new Float32Array(16);
+
+		var s = Math.cos(angle/2.0);
+		var wx = Math.sin(angle/2.0)*axis[0];
+		var wy = Math.sin(angle/2.0)*axis[1];
+		var wz = Math.sin(angle/2.0)*axis[2];
+
+
+		rot[0] = 1-2.0*wy*wy-2.0*wz*wz;
+		rot[1] = 2.0*wx*wy+2.0*s*wz;
+		rot[2] = 2.0*wx*wz-2.0*s*wy;
+		rot[3] = 0;
+		rot[4] = 2.0*wx*wy-2.0*s*wz;
+		rot[5] = 1-2.0*wx*wx-2.0*wz*wz;
+		rot[6] = 2.0*wy*wz+2.0*s*wx;
+		rot[7] = 0;
+		rot[8] = 2.0*wx*wz+2.0*s*wy;
+		rot[9] = 2.0*wy*wz-2.0*s*wx;
+		rot[10] = 1-2.0*wx*wx-2.0*wy*wy;
+		rot[11] = 0;
+		rot[12] = 0;
+		rot[13] = 0;
+		rot[14] = 0;
+		rot[15] = 1;
+
+		return rot;
 	}
 
 	function onMouseDown( event ){
