@@ -63,7 +63,7 @@ varying vec3 v_surfaceToView;
 
 void main() {
   //v_texCoord = a_texcoord;
-  v_position = (u_worldViewProjection * a_position);
+  v_position = (u_worldViewProjection * a_position);//(a_position * u_worldViewProjection);//
   v_normal = (u_worldInverseTranspose * vec4(a_normal, 0)).xyz;
   v_surfaceToLight = u_lightWorldPos - (u_world * a_position).xyz;
   v_surfaceToView = (u_viewInverse[3] - (u_world * a_position)).xyz;
@@ -105,11 +105,12 @@ void main() {
   //u_lightColor * (diffuseColor * litR.y + diffuseColor * u_ambient +
   //              u_specular * litR.z * u_specularFactor)).rgb,
   //    diffuseColor.a);
-  vec4 outColor = vec4(0.5,0.6,0.7,1.0);
+  //vec4 outColor = vec4(0.5,0.6,0.7,1.0);
+  vec4 outColor = vec4(a_normal,1.0);
   gl_FragColor = outColor;
 }
   </script>
-  <script src="js/twgl-full.js"></script>
+  <script src="js/twgl-full-modified.js"></script>
   <script src="js/trackball.js"></script>
 
 
@@ -130,20 +131,24 @@ void main() {
       this.x = 0,
       this.y = 0
     };
-/*
+    //global variable for mouse position
+    var mouse = {x: 0, y: 0};
+/**/
     var arrays = {
       position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
       normal:   [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
       texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
       indices:  [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
     };
-*/
+/**/
+/*
     var arrays = {
       position: [1, 0, 1, 1, 0, -1, -1, 0, -1, -1, 0, 1],
       normal:   [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,],
       texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
       indices:  [0, 1, 2, 0, 2, 3],
     };
+*/
     var bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
 
     var uniforms = {
@@ -154,6 +159,41 @@ void main() {
       u_shininess: 50,
       u_specularFactor: 1,
     };
+
+    function rotateTrackball () {
+      trackball.rotate(mouse.x, mouse.y);
+    }
+
+    //event that updates the mouse position when the mouse moves
+    gl.canvas.addEventListener('mousemove', function(e) {
+      mouse.x = (2.0*(e.pageX - this.offsetLeft)/gl.canvas.width)-1.0;
+      mouse.y = -((2.0*(e.pageY - this.offsetTop)/gl.canvas.height)-1.0);
+    }, false);
+
+    //when mouse is clicked (but not yet released) this event:
+    //  checks if it has clicked on any of the points belonging to the lines;
+    //    if so, attributes this point to the global variable 'point';
+    //  sets the 'mousemove' event to call the movePoint function.
+    gl.canvas.addEventListener('mousedown', function(e) {
+        trackball.rotate(mouse.x,mouse.y);     
+        gl.canvas.addEventListener('mousemove', rotateTrackball, false);
+    }, false);
+     
+    //when the mouse is released:
+    //clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
+    gl.canvas.addEventListener('mouseup', function() {
+      gl.canvas.removeEventListener('mousemove', rotateTrackball, false);
+      trackball.endRotation(mouse.x,mouse.y);
+    }, false);
+
+    //moves the point referenced by global variable 'point' to global variable 'mouse' x,y coordinates
+    //then, clear the canvas and redraw
+    /*function movePoint () {
+      if (point) {
+        point.move(mouse.x, mouse.y)
+      }
+      display();
+    }*/
 
     function render(time) {
       time *= 0.001;
@@ -169,13 +209,14 @@ void main() {
         trackball.update();
         update = false;
       };
+      trackball.updateRotation();
 
       gl.enable(gl.DEPTH_TEST);
       //gl.enable(gl.CULL_FACE); //double-sided faces
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       //will transform stuff around (model matrix) when processing the vertices (vertex shader)
-      var world = m4.identity();//rotationX(time);//
+      var world = trackball.transformMatrix;//m4.identity();//rotationX(time);//
 
       //set uniforms
       uniforms.u_viewInverse = trackball.cameraMatrix;
@@ -183,7 +224,7 @@ void main() {
       //we use the following to deal with the normals on the vertex shader
       uniforms.u_worldInverseTranspose = m4.transpose(m4.inverse(world));
       //model * (view*projection) = modelViewProjection
-      uniforms.u_worldViewProjection = m4.multiply(world, trackball.viewProjectionMatrix);
+      uniforms.u_worldViewProjection = m4.multiply(trackball.viewProjectionMatrix, world);//m4.multiply(world, trackball.viewProjectionMatrix);//
 
       gl.useProgram(programInfo.program);
       twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
