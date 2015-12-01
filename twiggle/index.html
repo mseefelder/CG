@@ -105,7 +105,8 @@ void main() {
   //u_lightColor * (diffuseColor * litR.y + diffuseColor * u_ambient +
   //              u_specular * litR.z * u_specularFactor)).rgb,
   //    diffuseColor.a);
-  vec4 outColor = vec4(0.5,0.6,0.7,1.0);
+  //vec4 outColor = vec4(0.5,0.6,0.7,1.0);
+  vec4 outColor = vec4(a_normal,1.0);
   gl_FragColor = outColor;
 }
   </script>
@@ -132,20 +133,22 @@ void main() {
     };
     //global variable for mouse position
     var mouse = {x: 0, y: 0};
-/*
+/**/
     var arrays = {
       position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
       normal:   [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
       texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
       indices:  [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
     };
-*/
+/**/
+/*
     var arrays = {
       position: [1, 0, 1, 1, 0, -1, -1, 0, -1, -1, 0, 1],
       normal:   [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,],
       texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
       indices:  [0, 1, 2, 0, 2, 3],
     };
+*/
     var bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
 
     var uniforms = {
@@ -179,8 +182,8 @@ void main() {
     //when the mouse is released:
     //clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
     gl.canvas.addEventListener('mouseup', function() {
-      trackball.endRotation(mouse.x,mouse.y);
       gl.canvas.removeEventListener('mousemove', rotateTrackball, false);
+      trackball.endRotation(mouse.x,mouse.y);
     }, false);
 
     //moves the point referenced by global variable 'point' to global variable 'mouse' x,y coordinates
