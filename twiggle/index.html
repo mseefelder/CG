@@ -70,6 +70,11 @@ void main() {
   gl_Position = v_position;
 }
   </script>
+
+
+
+
+
   <script id="fs" type="notjs">
 precision mediump float;
 
@@ -109,6 +114,7 @@ void main() {
   vec4 outColor = vec4(a_normal,1.0);
   gl_FragColor = outColor;
 }
+
   </script>
   <script src="js/twgl-full-modified.js"></script>
   <script src="js/trackball.js"></script>

@@ -11,16 +11,20 @@ twgl.Trackball = function ( canvas ) {
 	//some of these would better be "private", but let it be for now
 
 	//eye position in the world
-	this.eye = [1, 4, -6];
+	this.eye = [0, 0, -10];
 	//where is the eye looking at?
 	this.target = [0,0,0];
 	//where does the top of the camera point to?
 	this.up = [0,1,0];
 	//arcball's radius
 	this.radius = 1.0;
+	this.near = 1.0;
+	this.far = 11.0;
 	
 	//projection "lenses"
-	this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
+	this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, this.near, this.far);
+	//this.projectionMatrix = m4.ortho(-1.0,1.0,-1.0,1.0, 0.0, 100);
+
 	this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
 	this.viewProjectionMatrix = m4.multiply(this.projectionMatrix, m4.inverse(this.cameraMatrix));
 
@@ -31,13 +35,16 @@ twgl.Trackball = function ( canvas ) {
 	//internal variables
 	var scope = this;
 	var isRotating = false;
+	var isZooming = false;
 	var newRotation = false;
 	var initialVector = v3.copy([0,0,0]);
 	var finalVector = v3.copy([0,0,0]);
 	
 	//this.functions
 	this.update = function () {
-		this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
+		this.projectionMatrix = m4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, this.near, this.far);
+		//this.projectionMatrix = m4.ortho(-1.0,1.0,-1.0,1.0, 0.0, 100);
+
 		this.cameraMatrix = m4.lookAt(this.eye, this.target, this.up);
 		this.viewProjectionMatrix = m4.multiply(this.projectionMatrix, m4.inverse(this.cameraMatrix));
 	};
@@ -64,7 +71,7 @@ twgl.Trackball = function ( canvas ) {
 
 	//takes in two vector components supposed to be between -1.0 and 1.0
 	this.rotate = function ( x, y ) {
-        console.log(x,y);
+        //console.log(x,y);
         /**/
 		if (!isRotating) {
 			isRotating = true;
@@ -84,6 +91,10 @@ twgl.Trackball = function ( canvas ) {
 			newRotation = false;
 			isRotating = false;
 		}
+	};
+
+	this.zoom = function (amount) {
+		
 	};
 
 	//takes in two vector components supposed to be between -1.0 and 1.0
