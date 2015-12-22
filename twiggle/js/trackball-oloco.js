@@ -11,7 +11,7 @@ twgl.Trackball = function ( canvas ) {
 	//some of these would better be "private", but let it be for now
 
 	//eye position in the world
-	this.eye = [0, 0, -30];
+	this.eye = [0, 0, -10];
 	//where is the eye looking at?
 	this.target = [0,0,0];
 	//where does the top of the camera point to?
@@ -20,7 +20,7 @@ twgl.Trackball = function ( canvas ) {
 	this.radius = 1.0;
 	this.near = 1.0;
 	this.far = 100.0;
-	this.fov = 20.0;
+	this.fov = 10.0;
 	
 	//projection "lenses"
 	this.projectionMatrix = m4.perspective(this.fov * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, this.near, this.far);
@@ -48,6 +48,16 @@ twgl.Trackball = function ( canvas ) {
 	var newRotation = false;
 	var initialVector = v3.copy([0,0,0]);
 	var finalVector = v3.copy([0,0,0]);
+	//zoom controls
+	var isZooming = false;
+	var newZoom = false;
+	var initialLength = 0.0;
+	var finalLength = 0.0;
+	//translation controls
+	var isTranslating = false;
+	var newTranslation = false;
+	var initialPoint = v3.copy([0,0,0]);
+	var finalPoint = v3.copy([0,0,0]);
 
 	//this.functions
 	this.update = function () {
@@ -58,8 +68,24 @@ twgl.Trackball = function ( canvas ) {
 		this.viewProjectionMatrix = m4.multiply(this.projectionMatrix, m4.inverse(this.cameraMatrix));
 	};
 
+	this.updateModelMatrix = function () {
+		this.transformMatrix = m4.identity();
+		//rotate
+		this.updateRotation();
+		m4.copy(this.rotationMatrix, this.transformMatrix);
+		//translate
+		this.updateTranslation();
+		var t = m4.translation(translationVector);
+		m4.multiply(t, this.transformMatrix, this.transformMatrix);
+		//m4.translate(this.transformMatrix, translationVector, this.transformMatrix);
+		//scale
+		this.updateZooming();
+		m4.scale(this.transformMatrix, [zoomValue,zoomValue,zoomValue], this.transformMatrix);
+
+	};
+
 	this.updateRotation = function () {
-		/**/
+		/*
 		if (newRotation) {
 			//update transform matrix with rotation
 			var dot = v3.dot(initialVector,finalVector);
@@ -78,8 +104,7 @@ twgl.Trackball = function ( canvas ) {
 			//rotation updated. set as false
 			newRotation = false;
 		}
-		/**/
-		/*
+		*/
 		if (newRotation) {
 			//update transform matrix with rotation
 			var dot = v3.dot(initialVector,finalVector);
@@ -98,7 +123,27 @@ twgl.Trackball = function ( canvas ) {
 			//rotation updated. set as false
 			newRotation = false;
 		}
-		*/
+	};
+
+	this.updateZooming = function () {
+		if (newZoom) {
+			var zoomBy = finalLength/initialLength;
+			console.log(finalLength," ",initialLength);
+			zoomValue = this.tempValue*zoomBy;
+
+			newZoom = false;
+		}
+	};
+
+	this.updateTranslation = function () {
+		if (newTranslation) {
+			var translateBy = v3.subtract(finalPoint, initialPoint);
+			//console.log(finalPoint," ",initialPoint," ",translateBy);
+			translationVector = v3.add(this.tempVector,translateBy);
+			//console.log(translationVector);
+
+			newTranslation = false;
+		}
 	};
 
 	//takes in two vector components supposed to be between -1.0 and 1.0
@@ -106,7 +151,7 @@ twgl.Trackball = function ( canvas ) {
 		if (!isRotating) {
 			isRotating = true;
 			initialVector = projectOnSphere(x,y,1.0);
-			m4.copy(this.transformMatrix, this.oldTransformMatrix);
+			m4.copy(this.rotationMatrix, this.tempMatrix);
 		}
 		else {
 			finalVector = projectOnSphere(x,y,1.0);
@@ -119,6 +164,49 @@ twgl.Trackball = function ( canvas ) {
 		if (isRotating) {
 			newRotation = false;
 			isRotating = false;
+		}
+	};
+
+	this.zoom = function (amount) {
+		if (!isZooming) {
+			isZooming = true;
+			initialLength = amount;
+			this.tempValue = zoomValue;
+		}
+		else {
+			finalLength = amount;
+			newZoom = true;
+		}
+	};
+
+	this.endZoom = function ( ) {
+			console.log("end of zoom");
+			if (isZooming) {
+				newZoom = false;
+				isZooming = false;
+			}
+	};
+
+	this.translate = function (x,y) {
+		//console.log(x,y);
+		if (!isTranslating) {
+			isTranslating = true;
+			//initialPoint = v3.copy(this.unproject(x,y));
+			initialPoint = v3.copy([x,y,0]);
+			this.tempVector = v3.copy(translationVector);
+		}
+		else {
+			//finalPoint = v3.copy(this.unproject(x,y));
+			finalPoint = v3.copy([x,y,0]);
+			newTranslation = true;
+		}
+	};
+
+	this.endTranslation = function () {
+		console.log("end of translation");
+		if (isTranslating) {
+			newTranslation = false;
+			isTranslating = false;
 		}
 	};
 
