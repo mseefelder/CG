@@ -27,7 +27,7 @@
 
     //global variable for interaction mode
     // 0 = add; 1 = translate; 2 = rotate; 3 = scale; 
-    var mode = 1;
+    var mode = 2;
     //Index of selected object. -1 = no object selected
     var selected = 0;
 
@@ -111,6 +111,12 @@
       trackball.update();
     }
 
+    function instructions () {
+
+      alert("A - Adicionar cubos (clique do mouse) \n S - Selecionar cubo (clique do mouse) \n X - Remover cubo selecionado \n R - Modo de rotação (clique do mouse) \n T - Modo de translação (clique do mouse)");
+
+    }
+
     //INTERACTION
 
     function pick () {
@@ -161,7 +167,10 @@
       gl.readPixels(mouse.intX, mouse.intY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelValues);
       console.log(pixelValues);
 
+      cube[selected].isSelected = false;
       selected = (pixelValues[3] != 0)?pixelValues[0]:-1;
+      if(selected != -1)
+        cube[selected].isSelected = true;
 
       //last thing: unbind framebuffer
       twgl.bindFramebufferInfo(gl);
@@ -196,6 +205,10 @@
       cube[selected].translate(unproj);
     }
 
+    function rotateCube ( ) {
+      cube[selected].rotate(mouse.x, mouse.y, trackball);
+    }
+
     //EVENTS
 
     //event that updates the mouse position when the mouse moves
@@ -213,7 +226,6 @@
     gl.canvas.addEventListener('mousedown', function(e) {
         switch(mode){
           case 0: //add cube
-
             break;
           case 1: //translate
             if(selected != -1){
@@ -227,14 +239,11 @@
               trackball.rotate(mouse.x,mouse.y);     
               gl.canvas.addEventListener('mousemove', rotateTrackball, false);
             } else {
-
+              cube[selected].rotate(mouse.x,mouse.y, trackball);     
+              gl.canvas.addEventListener('mousemove', rotateCube, false);
             }            
             break;
-          case 3: //scale
-            //var unprojLen = v3.length(trackball.unproject(mouse.x, mouse.y));
-            //var scale = Math.sqrt((mouse.x*mouse.x)+(mouse.y*mouse.y));
-            //trackball.zoom(scale);
-            //gl.canvas.addEventListener('mousemove', zoomTrackball, false);
+          case 3: //select
             break;
         }
 
@@ -245,6 +254,7 @@
     gl.canvas.addEventListener('mouseup', function() {
       switch(mode){
           case 0: //add cube
+            console.log(trackball.unprojectSimple(mouse.x, mouse.y, 0.0), " ", trackball.unprojectSimple(mouse.x, mouse.y, 1.0));
             addCube();
             break;
           case 1: //translate
@@ -258,7 +268,8 @@
               gl.canvas.removeEventListener('mousemove', rotateTrackball, false);
               trackball.endRotation();
             } else {
-
+              gl.canvas.removeEventListener('mousemove', rotateCube, false);
+              cube[selected].endRotation();
             }
             break;
           case 3: //select
@@ -270,83 +281,30 @@
       
     }, false);
 
+    document.addEventListener('keyup', function( e ) {
+      switch ( e.keyCode ) {
+        case 'A'.charCodeAt(0):
+          mode = 0;
+          break;
+        case 'S'.charCodeAt(0):
+          mode = 3;
+          break;
+        case 'R'.charCodeAt(0):
+          mode = 2;
+          break;
+        case 'T'.charCodeAt(0):
+          mode = 1;
+          break;
+        case 'X'.charCodeAt(0):
+          if (selected != -1) {
+            deleteCube();
+          };
+          break;
+      }
+    }, true);
 
+    instructions();
     createFramebuffer();
     onResize();
     console.log(fb);
     requestAnimationFrame(render);
-
-
-    /*
-    function createFrameBuffer () {
-      //create framebuffer for picking
-      // create an empty texture
-      var tex = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, viewport.x, viewport.y, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-
-      // Create a framebuffer and attach the texture.
-      var fb = gl.createFramebuffer();
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-      //unbind the framebuffer and texture
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.bindTexture(gl.TEXTURE_2D, null);
-
-      return fb;
-    }
-
-    function pick () {
-      //only recalculate camera matrixes when resized
-      twgl.resizeCanvasToDisplaySize(gl.canvas);
-      if (gl.canvas.width !== viewport.x || gl.canvas.height !== viewport.y) {
-        //resize canvas to fill browser window and resize glViewport
-        onResize();
-      };
-
-      //create framebuffer
-      //framebuffer
-      var fb = createFramebuffer();
-      console.log("fb",fb);
-      //bind picking framebuffer
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-
-      //render
-      trackball.updateRotation();
-
-      gl.enable(gl.DEPTH_TEST);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-      //will transform stuff around (model matrix) when processing the vertices (vertex shader)
-      var world = trackball.transformMatrix;//m4.identity();//rotationX(time);//
-
-      //set uniforms
-      uniforms.u_viewInverse = trackball.cameraMatrix;
-      uniforms.u_world = world;
-      //we use the following to deal with the normals on the vertex shader
-      uniforms.u_worldInverseTranspose = m4.transpose(m4.inverse(world));
-      //model * (view*projection) = modelViewProjection
-      var wat = m4.multiply(trackball.viewProjectionMatrix, world);//m4.multiply(world, trackball.viewProjectionMatrix);//
-
-      console.log("pickingProgramInfo", pickingProgramInfo.program);
-      gl.useProgram(pickingProgramInfo.program);
-
-      for (var i = 0; i < cube.length; i++) {
-        //console.log(i);
-        uniforms.u_worldViewProjection = m4.multiply(wat, cube[i].modelMatrix());
-        uniforms.u_index = 5.0;
-        cube[i].render(gl, pickingProgramInfo);
-      };
-
-      //pick
-      var pixel = new Uint8Array;
-      var pickX = (mouse.x+1.0)/2.0*viewport.x;
-      var pickY = (mouse.y+1.0)/2.0*viewport.y;
-      gl.readPixels(pickX,pickY,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);
-      console.log(pixel);
-      
-      //unbind
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-    }     
-     */

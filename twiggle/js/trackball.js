@@ -17,7 +17,7 @@ twgl.Trackball = function ( canvas ) {
 	//where does the top of the camera point to?
 	this.up = [0,1,0];
 	//arcball's radius
-	this.radius = 1.0;
+	this.radius = 2.0;
 	this.near = 1.0;
 	this.far = 100.0;
 	this.fov = 10.0;
@@ -59,7 +59,6 @@ twgl.Trackball = function ( canvas ) {
 	};
 
 	this.updateRotation = function () {
-		/**/
 		if (newRotation) {
 			//update transform matrix with rotation
 			var dot = v3.dot(initialVector,finalVector);
@@ -78,38 +77,17 @@ twgl.Trackball = function ( canvas ) {
 			//rotation updated. set as false
 			newRotation = false;
 		}
-		/**/
-		/*
-		if (newRotation) {
-			//update transform matrix with rotation
-			var dot = v3.dot(initialVector,finalVector);
-			var angle = (dot <= 1) ? Math.acos(dot) : 0.0;
-
-			var axis = v3.cross(initialVector,finalVector);
-			if(v3.lengthSq(axis) != 0) {
-				v3.normalize(axis,axis);
-			}
-
-			axis = m4.transformDirection(m4.inverse(m4.multiply(m4.inverse(this.cameraMatrix), this.tempMatrix)), axis);
-
-			var q = quaternionRotationMatrix( axis, angle );
-			m4.multiply(this.tempMatrix, q, this.rotationMatrix);
-			
-			//rotation updated. set as false
-			newRotation = false;
-		}
-		*/
 	};
 
 	//takes in two vector components supposed to be between -1.0 and 1.0
 	this.rotate = function ( x, y ) {
 		if (!isRotating) {
 			isRotating = true;
-			initialVector = projectOnSphere(x,y,1.0);
+			initialVector = projectOnSphere(x*(canvas.clientWidth / canvas.clientHeight),y,1.0);
 			m4.copy(this.transformMatrix, this.oldTransformMatrix);
 		}
 		else {
-			finalVector = projectOnSphere(x,y,1.0);
+			finalVector = projectOnSphere(x*(canvas.clientWidth / canvas.clientHeight),y,1.0);
 			newRotation = true;
 		}
 	};
@@ -151,32 +129,13 @@ twgl.Trackball = function ( canvas ) {
         f*unprojA[2]+n*unprojB[2]
       ];
 
-      //console.log(unprojC);
-      /**/
-
-      //calculating the weights for affine combination of near and far points:
-      /**
-      //DEVERIA SER ASSIM
-      var l = v3.length(trackball.eye);
-      var range = Math.abs(trackball.near-trackball.far)*1.0;
-      var f = Math.abs(l-trackball.near)/range;
-      var n = Math.abs(l-trackball.far)/range;
-      console.log(unprojA[2]," ",unprojB[2]," ",l," ",range," ",f," ",n);
-
-      //combined
-      var unprojC = [
-        n*unprojA[0]+f*unprojB[0],
-        n*unprojA[1]+f*unprojB[1],
-        n*unprojA[2]+f*unprojB[2]
-      ];/**/
-
       return unprojC;
 	};
 
-	this.unprojectSimple = function (x,y) {
+	this.unprojectSimple = function (x,y,z) {
 		var unprojA = m4.transformPoint(
         	m4.inverse( m4.multiply(this.viewProjectionMatrix, this.transformMatrix) ), 
-        	[x,y,1.0]);
+        	[x,y,z]);
 
     	return unprojA;
 	}
@@ -196,6 +155,22 @@ twgl.Trackball = function ( canvas ) {
 		}
 		return projection;
 	}
+
+	/*
+	function sphereHit (  rO, rD, sO, sR ) {
+		var t = v3.dot(v3.subtract(sO, rO),rD);
+		var p = v3.add(rO, v3.mulScalar(rD, t));
+		var d = v3.length(v3.subtract(p, sO));
+		//console.log(t,p,d);
+		if (d <= sR) {
+			return p;
+		} else {
+			//return "error";
+			//console.log("recur");
+			return sphereHit(p, v3.normalize(v3.subtract(sO,p)), sO, sR);
+		}
+	}
+	*/
 
 	//expects a unit vector for the axis and a angle of rotation in radians
 	/*
