@@ -1,28 +1,34 @@
     "use strict";
+    //Prefix for attributes on shader
     twgl.setAttributePrefix("a_");
+    //Making my life easier:
     var m4 = twgl.m4;
     var v3 = twgl.v3;
+    //Getting the context
+    //var gl = twgl.getWebGLContext(document.getElementById("c"), {preserveDrawingBuffer: true});
     var gl = twgl.getWebGLContext(document.getElementById("c"));
-    var programInfo = twgl.createProgramInfo(gl, ["vs", "fs"]);
-    var pickingProgramInfo = twgl.createProgramInfo(gl, ["pvs", "pfs"]);
+    //Creating the shader programs
+    var programInfo = twgl.createProgramInfo(gl, ["vs", "fs"]); //normal rendering
+    var pickingProgramInfo = twgl.createProgramInfo(gl, ["pvs", "pfs"]); //used for picking
 
     //create scene trackball
     var trackball = new twgl.Trackball(gl.canvas);
-    //framebufferinfo
+    //Framebuffer for picking
     var fb = null;
 
-    //application status variables
+    //Viewport dimensions
     var viewport = function (){
       this.x = gl.canvas.width,
       this.y = gl.canvas.height
     };
 
     //global variable for mouse position
-    var mouse = {x: 0, y: 0}; 
+    var mouse = {x: 0, y: 0, intX:0, intY:0}; 
 
     //global variable for interaction mode
     // 0 = add; 1 = translate; 2 = rotate; 3 = scale; 
     var mode = 3;
+    //Index of selected object. -1 = no object selected
     var selected = -1;
 
     //Cube geometry object
@@ -31,8 +37,7 @@
     //Create an object instance with cube geometry
     var cube = [new twgl.Object( cubeMesh.bufferInfo )];
 
-    //new twgl.Object( cubeMesh.bufferInfo )
-
+    //Shader uniforms
     var uniforms = {
       u_lightWorldPos: [1, 8, -10],
       u_lightColor: [1, 0.8, 0.8, 1],
@@ -79,8 +84,12 @@
         //console.log(i);
         uniforms.u_worldViewProjection = m4.multiply(wat, cube[i].modelMatrix());
         uniforms.u_index = i;
-        cube[i].render(gl, programInfo);
+        cube[i].render(gl, programInfo, uniforms);
       };
+      //var pixelValues = new Uint8Array(4);
+      //gl.readPixels(10, 35, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelValues);
+      //console.log(pixelValues);
+
       //cube.render(gl, programInfo);
 
       requestAnimationFrame(render);
@@ -93,8 +102,7 @@
       twgl.bindFramebufferInfo(gl);
     }
 
-    //INTERACTION
-
+    //MAINTENANCE
     function onResize () {
       viewport.x = gl.canvas.width;
       viewport.y = gl.canvas.height;
@@ -103,10 +111,12 @@
       trackball.update();
     }
 
+    //INTERACTION
+
     function pick () {
       //bind framebuffer
       twgl.bindFramebufferInfo(gl,fb);
-
+      /**/
       //normal render
       twgl.resizeCanvasToDisplaySize(gl.canvas);
       
@@ -138,17 +148,20 @@
         //console.log(i);
         uniforms.u_worldViewProjection = m4.multiply(wat, cube[i].modelMatrix());
         uniforms.u_index = i;
-        cube[i].render(gl, pickingProgramInfo);
+        cube[i].render(gl, pickingProgramInfo, uniforms);
       };
-
+      /**/
       //check status
-      console.log(fb);
-      console.log(gl.checkFramebufferStatus(fb.framebuffer));
+      //console.log(fb);
+      //console.log(gl.checkFramebufferStatus(0) == gl.FRAMEBUFFER_COMPLETE);
 
       //pick pixel
-      var pixels = new Uint8Array;
-      gl.readPixels(0, 0, 10, 10, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-      console.log(pixels);
+      var pixelValues = new Uint8Array(4);
+      //console.log(mouse.intX," ",mouse.intY);
+      gl.readPixels(mouse.intX, mouse.intY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelValues);
+      console.log(pixelValues);
+
+      selected = (pixelValues[3] != 0)?pixelValues[0]:-1;
 
       //last thing: unbind framebuffer
       twgl.bindFramebufferInfo(gl);
@@ -158,17 +171,19 @@
       trackball.rotate(mouse.x, mouse.y);
     }
 
-    /*
-    function zoomTrackball () {
-      //var unprojLen = v3.length(trackball.unproject(mouse.x, mouse.y));
-      var scale = Math.sqrt((mouse.x*mouse.x)+(mouse.y*mouse.y));
-      trackball.zoom(scale);
+    function addCube() {
+      var unproj = trackball.unproject(mouse.x, mouse.y);
+      cube.push(new twgl.Object( cubeMesh.bufferInfo, 
+        unproj
+        ));
     }
 
-    function translateTrackball () {
-      trackball.translate(mouse.x,mouse.y);
+    function deleteCube() {
+      if (selected != -1){
+        cube.splice(selected,1);
+        selected = -1;
+      }
     }
-    */
 
     //EVENTS
 
@@ -176,6 +191,8 @@
     gl.canvas.addEventListener('mousemove', function(e) {
       mouse.x = (2.0*(e.pageX - this.offsetLeft)/gl.canvas.width)-1.0;
       mouse.y = -((2.0*(e.pageY - this.offsetTop)/gl.canvas.height)-1.0);
+      mouse.intX = e.pageX - this.offsetLeft;
+      mouse.intY = gl.canvas.height - e.pageY - this.offsetTop;
     }, false);
 
     //when mouse is clicked (but not yet released) this event:
@@ -192,8 +209,12 @@
             //gl.canvas.addEventListener('mousemove', translateTrackball, false);
             break;
           case 2: //rotate
-            trackball.rotate(mouse.x,mouse.y);     
-            gl.canvas.addEventListener('mousemove', rotateTrackball, false);
+            if(selected == -1){
+              trackball.rotate(mouse.x,mouse.y);     
+              gl.canvas.addEventListener('mousemove', rotateTrackball, false);
+            } else {
+
+            }            
             break;
           case 3: //scale
             //var unprojLen = v3.length(trackball.unproject(mouse.x, mouse.y));
@@ -210,18 +231,19 @@
     gl.canvas.addEventListener('mouseup', function() {
       switch(mode){
           case 0: //add cube
-            var unproj = trackball.unproject(mouse.x, mouse.y);
-            cube.push(new twgl.Object( cubeMesh.bufferInfo, 
-              unproj
-              ));
+            addCube();
             break;
           case 1: //translate
             //gl.canvas.removeEventListener('mousemove', translateTrackball, false);
             //trackball.endTranslation();
             break;
           case 2: //rotate
-            gl.canvas.removeEventListener('mousemove', rotateTrackball, false);
-            trackball.endRotation();
+            if (selected == -1) {
+              gl.canvas.removeEventListener('mousemove', rotateTrackball, false);
+              trackball.endRotation();
+            } else {
+
+            }
             break;
           case 3: //select
             pick();
@@ -231,15 +253,6 @@
         }
       
     }, false);
-
-    //moves the point referenced by global variable 'point' to global variable 'mouse' x,y coordinates
-    //then, clear the canvas and redraw
-    /*function movePoint () {
-      if (point) {
-        point.move(mouse.x, mouse.y)
-      }
-      display();
-    }*/
 
 
     createFramebuffer();

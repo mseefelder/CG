@@ -20,7 +20,7 @@ twgl.Trackball = function ( canvas ) {
 	this.radius = 1.0;
 	this.near = 1.0;
 	this.far = 100.0;
-	this.fov = 20.0;
+	this.fov = 10.0;
 	
 	//projection "lenses"
 	this.projectionMatrix = m4.perspective(this.fov * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, this.near, this.far);

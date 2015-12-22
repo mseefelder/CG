@@ -11,10 +11,13 @@ twgl.Object =  function( bufferInfo, center ){
 	//modelMatrix has changed???
 	var changed = true;
 
+	this.color = [0.5,0.6,0.7,1.0];
+
 	this.bufferInfo = bufferInfo;
 
-	this.render = function( webGlContext, shaderProgramInfo ){
-		twgl.setUniforms(programInfo, uniforms);
+	this.render = function( webGlContext, shaderProgramInfo, myUniforms ){
+		myUniforms.u_diffuse = this.color;
+		twgl.setUniforms(shaderProgramInfo, myUniforms);
 		twgl.setBuffersAndAttributes(webGlContext, shaderProgramInfo, this.bufferInfo);
       	gl.drawElements(gl.TRIANGLES, this.bufferInfo.numElements, gl.UNSIGNED_SHORT, 0);
 	};

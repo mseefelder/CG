@@ -3973,8 +3973,8 @@ define('twgl/m4',['./v3'], function (v3) {
   function perspective(fieldOfViewYInRadians, aspect, zNear, zFar, dst) {
     dst = dst || new MatType(16);
 
-    var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewYInRadians);
-    //var f = 1.0/(Math.tan(fieldOfViewYInRadians*0.5));
+    //var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewYInRadians);
+    var f = 1.0/(Math.tan(fieldOfViewYInRadians*0.5));
     var rangeInv = 1.0 / (zNear - zFar);
 
     dst[0]  = f / aspect;
