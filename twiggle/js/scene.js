@@ -27,9 +27,9 @@
 
     //global variable for interaction mode
     // 0 = add; 1 = translate; 2 = rotate; 3 = scale; 
-    var mode = 3;
+    var mode = 1;
     //Index of selected object. -1 = no object selected
-    var selected = -1;
+    var selected = 0;
 
     //Cube geometry object
     var cubeMesh = twgl.CubeMesh.getInstance(gl);
@@ -173,9 +173,15 @@
 
     function addCube() {
       var unproj = trackball.unproject(mouse.x, mouse.y);
-      cube.push(new twgl.Object( cubeMesh.bufferInfo, 
+      var indexPlus = cube.push(new twgl.Object( cubeMesh.bufferInfo, 
         unproj
         ));
+      cube[indexPlus-1].color = [
+        Math.random(),
+        Math.random(),
+        Math.random(),
+        1.0
+      ];
     }
 
     function deleteCube() {
@@ -183,6 +189,11 @@
         cube.splice(selected,1);
         selected = -1;
       }
+    }
+
+    function translateCube ( ) {
+      var unproj = trackball.unproject(mouse.x, mouse.y);
+      cube[selected].translate(unproj);
     }
 
     //EVENTS
@@ -205,8 +216,11 @@
 
             break;
           case 1: //translate
-            //trackball.translate(mouse.x,mouse.y);
-            //gl.canvas.addEventListener('mousemove', translateTrackball, false);
+            if(selected != -1){
+              var unproj = trackball.unproject(mouse.x, mouse.y);
+              cube[selected].translate(unproj);
+              gl.canvas.addEventListener('mousemove', translateCube, false);
+            }
             break;
           case 2: //rotate
             if(selected == -1){
@@ -234,8 +248,10 @@
             addCube();
             break;
           case 1: //translate
-            //gl.canvas.removeEventListener('mousemove', translateTrackball, false);
-            //trackball.endTranslation();
+            if (selected != -1) {
+              gl.canvas.removeEventListener('mousemove', translateCube, false);
+              cube[selected].endTranslation();
+            }
             break;
           case 2: //rotate
             if (selected == -1) {

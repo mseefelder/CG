@@ -151,7 +151,7 @@ twgl.Trackball = function ( canvas ) {
         f*unprojA[2]+n*unprojB[2]
       ];
 
-      console.log(unprojC);
+      //console.log(unprojC);
       /**/
 
       //calculating the weights for affine combination of near and far points:
@@ -173,6 +173,14 @@ twgl.Trackball = function ( canvas ) {
       return unprojC;
 	};
 
+	this.unprojectSimple = function (x,y) {
+		var unprojA = m4.transformPoint(
+        	m4.inverse( m4.multiply(this.viewProjectionMatrix, this.transformMatrix) ), 
+        	[x,y,1.0]);
+
+    	return unprojA;
+	}
+
 	//takes in two vector components supposed to be between -1.0 and 1.0
 	function projectOnSphere ( x, y, radius ) {
 		var projection = v3.copy([x,y,0]);
@@ -190,6 +198,7 @@ twgl.Trackball = function ( canvas ) {
 	}
 
 	//expects a unit vector for the axis and a angle of rotation in radians
+	/*
 	function quaternionRotationMatrix (axis, angle) {
 		var rot = new Float32Array(16);
 
@@ -218,6 +227,7 @@ twgl.Trackball = function ( canvas ) {
 
 		return rot;
 	}
+	*/
 	
 	/*
 	this.canvas.addEventListener( 'canvasmenu', function ( event ) { event.preventDefault(); }, false );

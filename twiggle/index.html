@@ -98,7 +98,7 @@
     }
 
     void main() {
-      vec4 diffuseColor = vec4(v_position.xyz,1.0);//texture2D(u_diffuse, v_texCoord);
+      vec4 diffuseColor = u_diffuse;//vec4(v_position.xyz,1.0);//texture2D(u_diffuse, v_texCoord);
       vec3 a_normal = normalize(v_normal);
       vec3 surfaceToLight = normalize(v_surfaceToLight);
       vec3 surfaceToView = normalize(v_surfaceToView);
@@ -106,19 +106,17 @@
       vec4 litR = lit(dot(a_normal, surfaceToLight),
                         dot(a_normal, halfVector), u_shininess);
       
-      //vec4 outColor = vec4((
-      //u_lightColor * (diffuseColor * litR.y + diffuseColor * u_ambient +
-      //              u_specular * litR.z * u_specularFactor)).rgb,
-      //    diffuseColor.a);
+      vec4 outColor = vec4((
+      u_lightColor * (diffuseColor * litR.y + diffuseColor * u_ambient +
+                    u_specular * litR.z * u_specularFactor)).rgb,
+          diffuseColor.a);
       
       //vec4 outColor = vec4(0.5,0.6,0.7,1.0);
-      vec4 outColor = u_diffuse;
+      //vec4 outColor = u_diffuse;
       //vec4 outColor = vec4(a_normal,1.0);
       gl_FragColor = outColor;
     }
-
   </script>
-
 
   <script id="pvs" type="notjs">
     uniform mat4 u_worldViewProjection;
@@ -190,11 +188,11 @@
       //vec4 outColor = vec4(5.0);
       gl_FragColor = outColor;
     }
-
   </script>
 
 
   <script src="js/twgl-full-modified.js"></script>
+  <script src="js/quaternion.js"></script>
   <script src="js/trackball.js"></script>
   <script src="js/cube.js"></script>
   <script src="js/object.js"></script>
