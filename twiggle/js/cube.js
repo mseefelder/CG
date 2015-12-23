@@ -7,13 +7,6 @@ twgl.CubeMesh = (function ( ) {
   function init( webGlContext ) {
 
     // Singleton
-
-    // Private methods and variables -----
-    //function privateMethod(){
-    //    console.log( "I am private" );
-    //}
-
-    //var privateVariable = "Im also private";
     var arrays = {
       position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
       normal:   [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
@@ -22,13 +15,6 @@ twgl.CubeMesh = (function ( ) {
     };
 
     return {
-
-      // Public methods and variables
-      //publicMethod: function () {
-      //  console.log( "The public can see me!" );
-      //},
-
-      //publicProperty: "I am also public"
       bufferInfo: twgl.createBufferInfoFromArrays(webGlContext, arrays)
     };
 
@@ -50,9 +36,3 @@ twgl.CubeMesh = (function ( ) {
   };
 
 })();
-
-// Usage:
-
-//var singleA = mySingleton.getInstance();  
-//var singleB = mySingleton.getInstance();  
-//console.log( singleA === singleB ); // true

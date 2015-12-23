@@ -47,6 +47,7 @@
       u_specularFactor: 1,
     };
 
+    //renders the scene
     function render(time) {
       time *= 0.001;
 
@@ -58,51 +59,45 @@
         onResize();
       };
       trackball.updateRotation();
-      //trackball.updateModelMatrix();
 
       gl.enable(gl.DEPTH_TEST);
-      //gl.enable(gl.CULL_FACE); //double-sided faces
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       //will transform stuff around (model matrix) when processing the vertices (vertex shader)
-      var world = trackball.transformMatrix;//m4.identity();//rotationX(time);//
-
-      //set uniforms
+      var world = trackball.transformMatrix;
+      //some uniforms
       uniforms.u_viewInverse = trackball.cameraMatrix;
       uniforms.u_world = world;
       //we use the following to deal with the normals on the vertex shader
       uniforms.u_worldInverseTranspose = m4.transpose(m4.inverse(world));
       //model * (view*projection) = modelViewProjection
-      /*uniforms.u_worldViewProjection*/var wat = m4.multiply(trackball.viewProjectionMatrix, world);//m4.multiply(world, trackball.viewProjectionMatrix);//
+      //will be multiplied by each object's modelMatrix
+      var mvpMatrix = m4.multiply(trackball.viewProjectionMatrix, world);
 
+      //defines which shader we'll use
       gl.useProgram(programInfo.program);
-      //twgl.setUniforms(programInfo, uniforms);
 
-      //twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-      //gl.drawElements(gl.TRIANGLES, bufferInfo.numElements, gl.UNSIGNED_SHORT, 0);
+      //render each cube separately
       for (var i = 0; i < cube.length; i++) {
-        //console.log(i);
-        uniforms.u_worldViewProjection = m4.multiply(wat, cube[i].modelMatrix());
+        uniforms.u_worldViewProjection = m4.multiply(mvpMatrix, cube[i].modelMatrix());
+        //index for picking
         uniforms.u_index = i;
         cube[i].render(gl, programInfo, uniforms);
       };
-      //var pixelValues = new Uint8Array(4);
-      //gl.readPixels(10, 35, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelValues);
-      //console.log(pixelValues);
-
-      //cube.render(gl, programInfo);
 
       requestAnimationFrame(render);
     }
 
     //PREPARATION
+    //creates framebuffer for picking
     function createFramebuffer () {
       fb = twgl.createFramebufferInfo(gl, [{ format: gl.RGBA, type: gl.UNSIGNED_BYTE, min: gl.LINEAR, wrap: gl.CLAMP_TO_EDGE, },], viewport.x, viewport.y);
-      //unbind fb
+      //bind default framebuffer
       twgl.bindFramebufferInfo(gl);
     }
 
     //MAINTENANCE
+    //Deal with browser resizing
     function onResize () {
       viewport.x = gl.canvas.width;
       viewport.y = gl.canvas.height;
@@ -111,6 +106,7 @@
       trackball.update();
     }
 
+    //Alert the control instructions
     function instructions () {
 
       alert("A - Adicionar cubos (clique do mouse) \n S - Selecionar cubo (clique do mouse) \n X - Remover cubo selecionado \n R - Modo de rotação (clique do mouse) \n T - Modo de translação (clique do mouse)");
@@ -119,11 +115,12 @@
 
     //INTERACTION
 
+    //Pick object
     function pick () {
       //bind framebuffer
       twgl.bindFramebufferInfo(gl,fb);
       /**/
-      //normal render
+      //render on the framebuffer. same code as on render()
       twgl.resizeCanvasToDisplaySize(gl.canvas);
       
       //only recalculate camera matrixes when resized
@@ -132,41 +129,31 @@
         onResize();
       };
       trackball.updateRotation();
-      //trackball.updateModelMatrix();
 
       gl.enable(gl.DEPTH_TEST);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-      //will transform stuff around (model matrix) when processing the vertices (vertex shader)
       var world = trackball.transformMatrix;
 
-      //set uniforms
       uniforms.u_viewInverse = trackball.cameraMatrix;
       uniforms.u_world = world;
-      //we use the following to deal with the normals on the vertex shader
       uniforms.u_worldInverseTranspose = m4.transpose(m4.inverse(world));
-      //model * (view*projection) = modelViewProjection
-      var wat = m4.multiply(trackball.viewProjectionMatrix, world);//m4.multiply(world, trackball.viewProjectionMatrix);//
+      var mvpMatrix = m4.multiply(trackball.viewProjectionMatrix, world);
 
+      //use the picking shader
       gl.useProgram(pickingProgramInfo.program);
 
       for (var i = 0; i < cube.length; i++) {
-        //console.log(i);
-        uniforms.u_worldViewProjection = m4.multiply(wat, cube[i].modelMatrix());
+        uniforms.u_worldViewProjection = m4.multiply(mvpMatrix, cube[i].modelMatrix());
         uniforms.u_index = i;
         cube[i].render(gl, pickingProgramInfo, uniforms);
       };
-      /**/
-      //check status
-      //console.log(fb);
-      //console.log(gl.checkFramebufferStatus(0) == gl.FRAMEBUFFER_COMPLETE);
 
       //pick pixel
       var pixelValues = new Uint8Array(4);
-      //console.log(mouse.intX," ",mouse.intY);
       gl.readPixels(mouse.intX, mouse.intY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelValues);
-      console.log(pixelValues);
 
+      //select picked object if any
       if (selected != -1 && cube[selected]) 
         cube[selected].isSelected = false;
       selected = (pixelValues[3] != 0)?pixelValues[0]:-1;
@@ -186,6 +173,7 @@
       var indexPlus = cube.push(new twgl.Object( cubeMesh.bufferInfo, 
         unproj
         ));
+      //choose random diffuse color
       cube[indexPlus-1].color = [
         Math.random(),
         Math.random(),
@@ -222,15 +210,13 @@
       mouse.intY = gl.canvas.height - e.pageY - this.offsetTop;
     }, false);
 
-    //when mouse is clicked (but not yet released) this event:
-    //  checks if it has clicked on any of the points belonging to the lines;
-    //    if so, attributes this point to the global variable 'point';
-    //  sets the 'mousemove' event to call the movePoint function.
+    //when mouse is clicked (but not yet released)
     gl.canvas.addEventListener('mousedown', function(e) {
+        //depending on the mode we're working with
         switch(mode){
-          case 0: //add cube
+          case 0: 
             break;
-          case 1: //translate
+          case 1: //translate selected object if any
             if(selected != -1){
               var unproj = trackball.unproject(mouse.x, mouse.y);
               if (selected != -1 && cube[selected])
@@ -238,7 +224,7 @@
               gl.canvas.addEventListener('mousemove', translateCube, false);
             }
             break;
-          case 2: //rotate
+          case 2: //rotate selected object or scene trackball
             if(selected == -1){
               trackball.rotate(mouse.x,mouse.y);     
               gl.canvas.addEventListener('mousemove', rotateTrackball, false);
@@ -254,22 +240,22 @@
 
     }, false);
      
-    //when the mouse is released:
-    //clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
+    //when the mouse is released
     gl.canvas.addEventListener('mouseup', function() {
+      //depending on the mode we're working with
       switch(mode){
-          case 0: //add cube
+          case 0: //add cube at mouse position
             console.log(trackball.unprojectSimple(mouse.x, mouse.y, 0.0), " ", trackball.unprojectSimple(mouse.x, mouse.y, 1.0));
             addCube();
             break;
-          case 1: //translate
+          case 1: //end translation of selected object if any
             if (selected != -1) {
               gl.canvas.removeEventListener('mousemove', translateCube, false);
               if (selected != -1 && cube[selected])
                 cube[selected].endTranslation();
             }
             break;
-          case 2: //rotate
+          case 2: //end rotation of selected object or scene trackball
             if (selected == -1) {
               gl.canvas.removeEventListener('mousemove', rotateTrackball, false);
               trackball.endRotation();
@@ -279,15 +265,14 @@
                 cube[selected].endRotation();
             }
             break;
-          case 3: //select
+          case 3: //pick
             pick();
-            //gl.canvas.removeEventListener('mousemove', zoomTrackball, false);
-            //trackball.endZoom();
             break;
         }
       
     }, false);
 
+    //Change modes
     document.addEventListener('keyup', function( e ) {
       switch ( e.keyCode ) {
         case 'A'.charCodeAt(0):
@@ -310,6 +295,7 @@
       }
     }, true);
 
+    //start application
     instructions();
     createFramebuffer();
     onResize();

@@ -1,7 +1,4 @@
-//quaternion class
-
-twgl.q4 = function ( canvas ) {};
-
+//quaternion rotation function
 function quaternionRotationMatrix (axis, angle) {
 	var rot = new Float32Array(16);
 

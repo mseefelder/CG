@@ -3,10 +3,13 @@ twgl.Object =  function( bufferInfo, center ){
 	//internal variables
 	var scope = this;
 
+	//center is used to place cube on initial position
 	center = center || [0.0,0.0,0.0];
+
 	var m4 = twgl.m4;
 	var v3 = twgl.v3;
 
+	//auxiliary matrix
 	var temp = m4.identity();
 
 	//Translation controls
@@ -29,6 +32,7 @@ twgl.Object =  function( bufferInfo, center ){
 	//is this selected?
 	this.isSelected = false;
 
+	//Diffuse color
 	this.color = [0.5,0.6,0.7,1.0];
 
 	this.bufferInfo = bufferInfo;
@@ -38,6 +42,7 @@ twgl.Object =  function( bufferInfo, center ){
 		twgl.setUniforms(shaderProgramInfo, myUniforms);
 		twgl.setBuffersAndAttributes(webGlContext, shaderProgramInfo, this.bufferInfo);
       	gl.drawElements(gl.TRIANGLES, this.bufferInfo.numElements, gl.UNSIGNED_SHORT, 0);
+      	//if object is selected draw sphere around it
       	if (this.isSelected) {
       		gl.enable(gl.BLEND);
       		gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -52,21 +57,20 @@ twgl.Object =  function( bufferInfo, center ){
       	}
 	};
 
+	//place cube on position define by twgl.v3 center
 	this.place = function( center ){
 		m4.translation(center, translation);
 		changed = true;
 	};
 
+	//translates cube by unprojected twgl.v3 vector
 	this.translate = function( vector ){
-		//console.log(vector);
 		if (!isTranslating){
 			m4.copy(translation, temp);
 			v3.copy(vector, tVector);
 			isTranslating = true;
 		} else {
-			//console.log(tVector, temp);
 			m4.multiply(temp, m4.translation(v3.subtract(vector, tVector)), translation);
-			//m4.translate(tVector, temp, translation);
 			changed = true
 		}
 	};
@@ -76,14 +80,14 @@ twgl.Object =  function( bufferInfo, center ){
 		isTranslating = false;
 	};
 
+	//rotation handling
+	//takes in two mouse coordinates (between -1.0 and 1.0) and a camera we use to render this object (in our case the trackball)
 	this.rotate = function ( x, y, camera ) {
-		//var point = v3.copy([x*(camera.canvas.clientWidth / camera.canvas.clientHeight), y, 0.0]);
 		var point = v3.copy([x, y, 0.0]);
 		if (!isRotating) {
 			isRotating = true;
-			console.log("pre");
+			//we do this to use the updated parameters in the rotation calculation
 			updateSphereRadiusAndOrigin(camera);
-			console.log("post");
 			v3.subtract(point, rotOrigin, point);
 			point[0] = point[0]*(camera.canvas.clientWidth / camera.canvas.clientHeight);
 			initialVector = projectOnSphere(point[0],point[1],rotRadius);
@@ -93,7 +97,7 @@ twgl.Object =  function( bufferInfo, center ){
 			v3.subtract(point, rotOrigin, point);
 			point[0] = point[0]*(camera.canvas.clientWidth / camera.canvas.clientHeight);
 			finalVector = projectOnSphere(point[0],point[1],rotRadius);
-			//rotate
+			//rotation update code
 			var dot = v3.dot(initialVector,finalVector);
 			var angle = (dot <= 1) ? Math.acos(dot) : 0.0;
 
@@ -116,6 +120,7 @@ twgl.Object =  function( bufferInfo, center ){
 		isRotating = false;
 	};
 
+	//returns the most up-to-date modelMatrix for this object
 	this.modelMatrix = function(){
 		if (changed) {
 			changed = false;
@@ -125,6 +130,8 @@ twgl.Object =  function( bufferInfo, center ){
 		};	
 	};
 
+	//projects screen coordinates x and y to a sphere
+	//takes in two vector components supposed to be between -1.0 and 1.0 and the camera used to render this object
 	function projectOnSphere ( x, y, camera ) {
 		var projection = v3.subtract([x,y,0.0], rotOrigin);
 		var projectionLength = v3.length(projection); 
@@ -133,13 +140,14 @@ twgl.Object =  function( bufferInfo, center ){
 		} else{
 			v3.normalize(projection, projection);
 		}
-		//redundant step
+
 		if (v3.length(projection) > 0.0) {
 			v3.normalize(projection, projection);
 		}
 		return projection;
 	}
 
+	//set some variables to enable rotation
 	function updateSphereRadiusAndOrigin ( camera ) {
 		var origin = v3.copy([0.0,0.0,0.0]);
 		var y_axis = v3.copy([0.0,1.0,0.0]);
@@ -149,7 +157,7 @@ twgl.Object =  function( bufferInfo, center ){
 		m4.transformPoint(modelViewProjectionMatrix, origin, rotOrigin);
 		m4.transformPoint(modelViewProjectionMatrix, y_axis, y_axis);
 
-		rotRadius = v3.length(v3.subtract(origin, y_axis));
+		rotRadius = 1.0;//v3.length(v3.subtract(origin, y_axis));
 		rotOrigin[2] = 0.0;
 
 		console.log(rotRadius, rotOrigin);
