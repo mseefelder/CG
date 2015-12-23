@@ -27,9 +27,9 @@
 
     //global variable for interaction mode
     // 0 = add; 1 = translate; 2 = rotate; 3 = scale; 
-    var mode = 2;
+    var mode = 0;
     //Index of selected object. -1 = no object selected
-    var selected = 0;
+    var selected = -1;
 
     //Cube geometry object
     var cubeMesh = twgl.CubeMesh.getInstance(gl);
@@ -109,7 +109,7 @@
     //Alert the control instructions
     function instructions () {
 
-      alert("A - Adicionar cubos (clique do mouse) \n S - Selecionar cubo (clique do mouse) \n X - Remover cubo selecionado \n R - Modo de rotação (clique do mouse) \n T - Modo de translação (clique do mouse)");
+      alert("A - Add cubes (right mouseclick) \n S - Select cube (right mouseclick) \n X - Remove selected cube \n R - Rotation mode (right mouseclick) \n T - Translation mode (right mouseclick)");
 
     }
 
@@ -245,7 +245,6 @@
       //depending on the mode we're working with
       switch(mode){
           case 0: //add cube at mouse position
-            console.log(trackball.unprojectSimple(mouse.x, mouse.y, 0.0), " ", trackball.unprojectSimple(mouse.x, mouse.y, 1.0));
             addCube();
             break;
           case 1: //end translation of selected object if any
@@ -299,5 +298,4 @@
     instructions();
     createFramebuffer();
     onResize();
-    console.log(fb);
     requestAnimationFrame(render);

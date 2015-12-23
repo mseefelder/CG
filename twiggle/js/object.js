@@ -160,8 +160,6 @@ twgl.Object =  function( bufferInfo, center ){
 		rotRadius = 1.0;//v3.length(v3.subtract(origin, y_axis));
 		rotOrigin[2] = 0.0;
 
-		console.log(rotRadius, rotOrigin);
-
 	}
 
 

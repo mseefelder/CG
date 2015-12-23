@@ -1,0 +1,15 @@
+Instruções
+
+A - Adicionar cubos (clique do mouse) 
+S - Selecionar cubo (clique do mouse)
+X - Remover cubo selecionado
+R - Modo de rotação (clique do mouse)
+T - Modo de translação (clique do mouse)
+
+Instructions
+
+A - Add cubes (right mouseclick)
+S - Select cube (right mouseclick)
+X - Remove selected cube
+R - Rotation mode (right mouseclick)
+T - Translation mode (right mouseclick)

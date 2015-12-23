@@ -90,7 +90,6 @@ twgl.Trackball = function ( canvas ) {
 
 	//ends the rotation by setting the flags as false
 	this.endRotation = function ( ) {
-		console.log("end of rotation");
 		if (isRotating) {
 			newRotation = false;
 			isRotating = false;
