@@ -11,7 +11,7 @@ twgl.Trackball = function ( canvas ) {
 	//some of these would better be "private", but let it be for now
 
 	//eye position in the world
-	this.eye = [0, 0, -30];
+	this.eye = [0, 0, -101];
 	//where is the eye looking at?
 	this.target = [0,0,0];
 	//where does the top of the camera point to?
@@ -19,7 +19,7 @@ twgl.Trackball = function ( canvas ) {
 	//arcball's radius
 	this.radius = 2.0;
 	this.near = 1.0;
-	this.far = 100.0;
+	this.far = 201.0;
 	this.fov = 10.0;
 	
 	//projection "lenses"

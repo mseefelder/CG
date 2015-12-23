@@ -77,18 +77,21 @@ twgl.Object =  function( bufferInfo, center ){
 	};
 
 	this.rotate = function ( x, y, camera ) {
-		var point = v3.copy([x*(camera.canvas.clientWidth / camera.canvas.clientHeight), y, 0.0]);
+		//var point = v3.copy([x*(camera.canvas.clientWidth / camera.canvas.clientHeight), y, 0.0]);
+		var point = v3.copy([x, y, 0.0]);
 		if (!isRotating) {
 			isRotating = true;
 			console.log("pre");
 			updateSphereRadiusAndOrigin(camera);
 			console.log("post");
 			v3.subtract(point, rotOrigin, point);
+			point[0] = point[0]*(camera.canvas.clientWidth / camera.canvas.clientHeight);
 			initialVector = projectOnSphere(point[0],point[1],rotRadius);
 			m4.copy(rotation, temp);
 		}
 		else {
 			v3.subtract(point, rotOrigin, point);
+			point[0] = point[0]*(camera.canvas.clientWidth / camera.canvas.clientHeight);
 			finalVector = projectOnSphere(point[0],point[1],rotRadius);
 			//rotate
 			var dot = v3.dot(initialVector,finalVector);
@@ -99,7 +102,7 @@ twgl.Object =  function( bufferInfo, center ){
 				v3.normalize(axis,axis);
 			}
 
-			axis = m4.transformDirection(m4.inverse(m4.multiply(m4.inverse(camera.cameraMatrix), camera.transformMatrix)), axis);
+			axis = m4.transformDirection(m4.inverse(m4.multiply(m4.multiply(m4.inverse(camera.cameraMatrix), camera.transformMatrix), this.modelMatrix())), axis);
 
 			var q = quaternionRotationMatrix( axis, angle );
 			m4.multiply(temp, q, rotation);

@@ -167,9 +167,10 @@
       gl.readPixels(mouse.intX, mouse.intY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelValues);
       console.log(pixelValues);
 
-      cube[selected].isSelected = false;
+      if (selected != -1 && cube[selected]) 
+        cube[selected].isSelected = false;
       selected = (pixelValues[3] != 0)?pixelValues[0]:-1;
-      if(selected != -1)
+      if(selected != -1 && cube[selected])
         cube[selected].isSelected = true;
 
       //last thing: unbind framebuffer
@@ -194,7 +195,7 @@
     }
 
     function deleteCube() {
-      if (selected != -1){
+      if (selected != -1 && cube[selected]){
         cube.splice(selected,1);
         selected = -1;
       }
@@ -202,11 +203,13 @@
 
     function translateCube ( ) {
       var unproj = trackball.unproject(mouse.x, mouse.y);
-      cube[selected].translate(unproj);
+      if (selected != -1 && cube[selected])
+        cube[selected].translate(unproj);
     }
 
     function rotateCube ( ) {
-      cube[selected].rotate(mouse.x, mouse.y, trackball);
+      if (selected != -1 && cube[selected])
+        cube[selected].rotate(mouse.x, mouse.y, trackball);
     }
 
     //EVENTS
@@ -230,7 +233,8 @@
           case 1: //translate
             if(selected != -1){
               var unproj = trackball.unproject(mouse.x, mouse.y);
-              cube[selected].translate(unproj);
+              if (selected != -1 && cube[selected])
+                cube[selected].translate(unproj);
               gl.canvas.addEventListener('mousemove', translateCube, false);
             }
             break;
@@ -239,7 +243,8 @@
               trackball.rotate(mouse.x,mouse.y);     
               gl.canvas.addEventListener('mousemove', rotateTrackball, false);
             } else {
-              cube[selected].rotate(mouse.x,mouse.y, trackball);     
+              if (selected != -1 && cube[selected])
+                cube[selected].rotate(mouse.x,mouse.y, trackball);     
               gl.canvas.addEventListener('mousemove', rotateCube, false);
             }            
             break;
@@ -260,7 +265,8 @@
           case 1: //translate
             if (selected != -1) {
               gl.canvas.removeEventListener('mousemove', translateCube, false);
-              cube[selected].endTranslation();
+              if (selected != -1 && cube[selected])
+                cube[selected].endTranslation();
             }
             break;
           case 2: //rotate
@@ -269,7 +275,8 @@
               trackball.endRotation();
             } else {
               gl.canvas.removeEventListener('mousemove', rotateCube, false);
-              cube[selected].endRotation();
+              if (selected != -1 && cube[selected])
+                cube[selected].endRotation();
             }
             break;
           case 3: //select
