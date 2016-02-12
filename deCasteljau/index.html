@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<!--Feito por: Marcos Seefelder de Assis Araujo--> 
+
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>De Casteljau</title>
+	<div id="canvasDiv" style = "display: flex; flex-direction: column; justify-content:center; text-align: center; align-items:center;" >
+		<h3 style = "color:white; height:1vmin;">De Casteljau's Bézier Curve Subdivision</h3>
+		<canvas id="canvas" width=1000 height=1000 
+			style = "
+			width: 80vmin; 
+			height: 80vmin; 
+			border:1px solid white; 
+			display: flex;
+			align-content: center;
+			justify-content: center;">
+		</canvas>
+		<div style = "display: flex; flex-direction: row;">
+			<div class="myButton" id="minus">- point</div>
+			<input type="range" id="casteljauRatio" value="90" max="100" min="0" oninput="display()" onchange="display()" >
+		</div>
+		<h6 style = "color: white; display:flex; flex-direction:column; height:1vmin;">Marcos Seefelder de Assis Araujo - Computer Graphics - EEL882 - UFRJ</h6>
+		<style type="text/css">
+			.myButton {
+				width: 16vmin;
+				height: 3vmin;
+				background-color:#44c767;
+				-moz-border-radius:21px;
+				-webkit-border-radius:21px;
+				border-radius:21px;
+				display:flex;
+				cursor:pointer;
+				flex-direction: column;
+				color:#ffffff;
+				font-size:4vmin;
+				padding:1vmin 1vmin;
+				text-decoration:none;
+				align-content: center;
+				justify-content: center;
+				text-align: center;
+				-webkit-user-select: none;     
+				-moz-user-select: none;
+				-ms-user-select: none;
+			}
+			.myButton:hover {
+				background-color:#5cbf2a;
+			}
+			.myButton:active {
+				position:relative;
+				top:1px;
+			}
+		</style>
+	</div>
+</head>
+<body style="background-color:#111111; 
+		display: flex;
+		align-content: center;
+		justify-content: center;">
+
+	<script type="text/javascript">
+
+		//classes
+		//Represents a single point
+		function Point (x,y,radius) {
+			this.x = x, //x coordinate
+			this.y = y, //y coordinate
+			this.radius = radius, //point radius, for circle representation
+			this.c = "#02E020", //point color for cricle representation
+			//draw itself on the context defined by the argument
+			this.draw = function(context){
+				var style = context.fillStyle;
+				context.fillStyle = this.c; 
+				context.beginPath();
+				context.arc(this.x,this.y,this.radius,0,2*Math.PI);
+				context.fill();
+				context.fillStyle = style;
+			},
+			//given x,y coordinates, define whether the point was clicked
+			//returns true if clicked and false otherwise
+			this.clicked = function(x,y){
+				return ((this.x-x)*(this.x-x) + (this.y-y)*(this.y-y)) <= radius*radius
+			},
+			//move this point to the given x,y coordinates
+			this.move = function(x,y){
+				this.x = x;
+				this.y = y;
+			}
+		}
+		
+		//begin: get canvas and its context. Resize canvas according to its style (defined on the html tag or css)
+		var canvas = document.getElementById("canvas");
+		canvas.width = canvas.offsetWidth;
+		canvas.height = canvas.offsetHeight;
+		var ctx = canvas.getContext("2d");
+
+		//global variable for mouse position
+		var mouse = {x: 0, y: 0};
+		//global variable. If there's a point being moved around with the mouse, this variable references it
+		var point = null;
+
+		//list of line segments
+		var points = [
+			new Point((canvas.width/2)-100,(canvas.height/2)-100,10), new Point((canvas.width/2)+100,(canvas.height/2)+100,10)
+		];
+
+		//first draw
+		//In this application draws only happen when a point is moved, so we need to draw the initial state
+		display();
+		
+		//event that updates the mouse position when the mouse moves
+		canvas.addEventListener('mousemove', function(e) {
+			mouse.x = e.pageX - this.offsetLeft;
+			mouse.y = e.pageY - this.offsetTop;
+		}, false);
+
+		//when mouse is clicked (but not yet released) this event:
+		//	checks if it has clicked on any of the points belonging to the lines;
+		//		if so, attributes this point to the global variable 'point';
+		//	sets the 'mousemove' event to call the movePoint function.
+		canvas.addEventListener('mousedown', function(e) {
+			point = null;
+		    for (var i = points.length - 1; i >= 0; i--) {
+		    	point = points[i].clicked(mouse.x, mouse.y)?points[i]:point;
+		    };
+		    if (point == null) {
+		    	points.push(new Point(mouse.x, mouse.y, 10));
+		    	point = points[points.length];
+		    	display();
+		    };
+		 
+		    canvas.addEventListener('mousemove', movePoint, false);
+		}, false);
+		 
+		//when the mouse is released:
+		//clear the global variable 'point' and remove the 'movePoint()' binding to 'mousemove' 
+		canvas.addEventListener('mouseup', function() {
+			point = null;
+
+		    canvas.removeEventListener('mousemove', movePoint, false);
+		}, false);
+
+		document.getElementById("minus").addEventListener('click', function(e) {
+			points.pop();
+			display();
+		}, false);
+
+		//moves the point referenced by global variable 'point' to global variable 'mouse' x,y coordinates
+		//then, clear the canvas and redraw
+		function movePoint () {
+			if (point) {
+				point.move(mouse.x, mouse.y)
+			}
+			display();
+		}
+
+		function drawLine (a,b,w) {
+			var stroke = ctx.strokeStyle;
+			var line = ctx.lineWidth;
+			ctx.strokeStyle = "white";
+  			ctx.lineWidth = w;
+  			ctx.beginPath();
+  			ctx.moveTo(a.x, a.y);
+  			ctx.lineTo(b.x, b.y);
+  			ctx.stroke();
+  			ctx.closePath();
+ 			ctx.strokeStyle = stroke;
+  			ctx.lineWidth = line;
+		}
+
+		//draw all lines on lines[] and their intersections
+		function display () {
+			//clear canvas
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			//draw casteljau
+			deCasteljau(points, (document.getElementById("casteljauRatio").value/100.0));
+			//draw Control Points
+			for (var i = 0; i < points.length; i++) {
+				points[i].c = "#02E020";
+				points[i].draw(ctx);
+			};
+		}
+
+		function interpPoints (a, b, ratio) {
+			return new Point(((1.0-ratio)*a.x + ratio*b.x), ((1.0-ratio)*a.y + ratio*b.y), 10);
+		}
+
+		function deCasteljau (list, ratio) {
+			if (list.length == 1) {
+				list[0].c = "red";
+				list[0].draw(ctx);
+				return;
+			};
+			for (var i = 0; i < list.length; i++) {
+				list[i].c = "blue";
+				list[i].draw(ctx);
+			};
+			var subPoints = [];
+			for (var i = 0; i < (list.length-1); i++) {
+				drawLine(list[i], list[i+1], 1.5);
+				subPoints.push(interpPoints(list[i],list[i+1],ratio));
+			};
+			deCasteljau(subPoints, ratio);
+		}
+
+
+	</script>
+
+</body>
+</html>
